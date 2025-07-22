@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  @apply bg-white dark:bg-gray-950;
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+/* Custom animations for component transitions */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Component transition classes */
+.component-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+.component-exit {
+  animation: fadeIn 0.2s ease-out reverse;
+}
+
+/* Loading animation */
+.loading-dot {
+  animation: pulse 1.5s infinite;
+}
+
+/* Smooth transitions for chat component */
+.chat-transition {
+  transition: all 0.3s ease;
+}
+
+/* Grid layout improvements */
+.react-grid-item {
+  transition: all 0.2s ease;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: #3f51b5;
+  opacity: 0.3;
+  border-radius: 4px;
+}
+
+/* Component card hover effects */
+.component-card {
+  transition: all 0.2s ease;
+}
+
+.component-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dashboard header improvements */
+.dashboard-header {
+  background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar improvements */
+.sidebar-nav {
+  background: linear-gradient(180deg, #f4f4f4 0%, #e8e8e8 100%);
+  border-right: 1px solid #ddd;
+}
+
+/* Button improvements */
+.action-button {
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  transform: scale(1.05);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}

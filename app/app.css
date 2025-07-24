@@ -74,6 +74,24 @@ body {
   border-radius: 4px;
 }
 
+/* Move cursor only when dragging is active */
+.react-grid-item.react-draggable-dragging {
+  cursor: move;
+}
+
+/* Ensure buttons always have pointer cursor and are clickable */
+.react-grid-item button,
+.react-grid-item button * {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* Prevent grid from interfering with button clicks */
+.react-grid-item button[data-no-drag="true"] {
+  pointer-events: auto !important;
+  z-index: 10;
+}
+
 /* Component card hover effects */
 .component-card {
   transition: all 0.2s ease;

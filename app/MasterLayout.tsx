@@ -267,6 +267,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                 <div style={{ fontWeight: "500" }}>{component.id}</div>
                 <div style={{ display: "flex", gap: "4px" }}>
                   <button
+                    data-no-drag="true"
                     onClick={(e) => {
                       e.stopPropagation();
                       e.preventDefault();
@@ -278,15 +279,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                     }}
                     onMouseDown={(e) => {
                       e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onMouseUp={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
                     }}
                     style={{
                       background: "transparent",
@@ -299,6 +291,8 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                       width: "24px",
                       height: "24px",
                       borderRadius: "4px",
+                      position: "relative",
+                      zIndex: 10,
                     }}
                     title="Chat with component"
                   >
@@ -308,20 +302,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                     data-no-drag="true"
                     onClick={(e) => {
                       e.stopPropagation();
-                      e.preventDefault();
                       removeLayoutItem(component.id);
-                    }}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onMouseUp={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                    }}
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
                     }}
                     style={{
                       background: "transparent",
@@ -441,10 +422,11 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           const componentWidth = layoutItem.w * cellWidth - margin;
           const componentHeight = layoutItem.h * cellHeight - margin;
 
-          // Position chat to align right corners and offset for button visibility
-          // Align chat right corner with component right corner
+          // Position chat to align with the chat button at the bottom of the app bar
+          // The chat button is positioned at the right side of the app bar (32px height)
+          // Align chat right edge with component right edge, and top edge with bottom of app bar
           let chatLeft = componentLeft + componentWidth - 300; // 300px is chat width
-          let chatTop = componentTop + 40; // Offset down by 40px for button visibility
+          let chatTop = componentTop + 32; // Align with bottom of app bar (32px height)
 
           // If chat would go off-screen to the left, adjust position
           if (chatLeft < 10) {
@@ -456,7 +438,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
             chatLeft = window.innerWidth - 310; // Keep minimum right margin
           }
 
-          // If chat would go off-screen below, move it up
+          // If chat would go off-screen below, move it above the component
           if (chatTop + 350 > window.innerHeight - 10) {
             chatTop = componentTop - 350; // Above component
           }

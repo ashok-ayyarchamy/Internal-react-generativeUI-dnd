@@ -8,7 +8,7 @@ interface Message {
   sender: "user" | "ai";
   timestamp: Date;
   component?: DraggableComponent;
-  suggestions?: DraggableComponent[];
+  suggestions?: any[]; // Use any[] to handle both string[] and DraggableComponent[]
 }
 
 interface AIChatComponentProps {
@@ -16,6 +16,15 @@ interface AIChatComponentProps {
   onToggleMinimize: () => void;
   onAddComponentToDashboard?: (component: DraggableComponent) => void;
   onRemoveComponentFromDashboard?: (componentId: string) => void;
+  onUpdateComponent?: (
+    componentId: string,
+    updates: Partial<DraggableComponent>
+  ) => void;
+  dashboardComponents?: DraggableComponent[];
+  messages?: Message[];
+  onAddMessage?: (message: Message) => void;
+  componentId?: string;
+  componentTitle?: string;
 }
 
 const AIChatComponent: React.FC<AIChatComponentProps> = ({
@@ -23,15 +32,25 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   onToggleMinimize,
   onAddComponentToDashboard,
   onRemoveComponentFromDashboard,
+  onUpdateComponent,
+  dashboardComponents = [],
+  messages = [],
+  onAddMessage,
+  componentId,
+  componentTitle,
 }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
-      sender: "ai",
-      timestamp: new Date(),
-    },
-  ]);
+  // Initialize with welcome message if no messages exist
+  const initialMessages: Message[] =
+    messages.length === 0
+      ? [
+          {
+            id: "1",
+            text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
+            sender: "ai",
+            timestamp: new Date(),
+          },
+        ]
+      : messages;
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showComponentPanel, setShowComponentPanel] = useState(false);
@@ -39,7 +58,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [initialMessages]);
 
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
@@ -51,7 +70,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    onAddMessage?.(userMessage);
     setInputText("");
     setIsLoading(true);
 
@@ -65,7 +84,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
         component: response.component,
         suggestions: response.suggestions,
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      onAddMessage?.(aiMessage);
       setIsLoading(false);
     }, 1000);
   };
@@ -79,6 +98,214 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
         return { text: message, component };
       }
     };
+
+    // Handle component modifications if componentId is provided
+    if (componentId && onUpdateComponent) {
+      // Handle color changes
+      if (
+        lowerInput.includes("change color") ||
+        lowerInput.includes("make it")
+      ) {
+        if (lowerInput.includes("blue")) {
+          console.log("Updating component to blue theme:", componentId);
+          onUpdateComponent(componentId, {
+            content: (
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#e3f2fd",
+                  borderRadius: "8px",
+                  height: "100%",
+                  border: "2px solid #1976d2",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#1976d2",
+                    fontSize: "16px",
+                  }}
+                >
+                  {componentTitle || "Component"} (Blue Theme)
+                </h3>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Component updated with blue color scheme!
+                </div>
+              </div>
+            ),
+          });
+          return {
+            text: "I've updated the component with a blue color scheme! The component now has a blue background and border.",
+            suggestions: [
+              "change color to green",
+              "change color to purple",
+              "make it bigger",
+              "change title",
+            ],
+          };
+        }
+        if (lowerInput.includes("green")) {
+          console.log("Updating component to green theme:", componentId);
+          onUpdateComponent(componentId, {
+            content: (
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#e8f5e8",
+                  borderRadius: "8px",
+                  height: "100%",
+                  border: "2px solid #2e7d32",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#2e7d32",
+                    fontSize: "16px",
+                  }}
+                >
+                  {componentTitle || "Component"} (Green Theme)
+                </h3>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Component updated with green color scheme!
+                </div>
+              </div>
+            ),
+          });
+          return {
+            text: "I've updated the component with a green color scheme! The component now has a green background and border.",
+            suggestions: [
+              "change color to blue",
+              "change color to purple",
+              "make it bigger",
+              "change title",
+            ],
+          };
+        }
+        if (lowerInput.includes("purple")) {
+          console.log("Updating component to purple theme:", componentId);
+          onUpdateComponent(componentId, {
+            content: (
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#f3e5f5",
+                  borderRadius: "8px",
+                  height: "100%",
+                  border: "2px solid #7b1fa2",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#7b1fa2",
+                    fontSize: "16px",
+                  }}
+                >
+                  {componentTitle || "Component"} (Purple Theme)
+                </h3>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Component updated with purple color scheme!
+                </div>
+              </div>
+            ),
+          });
+          return {
+            text: "I've updated the component with a purple color scheme! The component now has a purple background and border.",
+            suggestions: [
+              "change color to blue",
+              "change color to green",
+              "make it bigger",
+              "change title",
+            ],
+          };
+        }
+      }
+
+      // Handle size changes
+      if (
+        lowerInput.includes("make it bigger") ||
+        lowerInput.includes("increase size") ||
+        lowerInput.includes("bigger")
+      ) {
+        console.log("Making component bigger:", componentId);
+        onUpdateComponent(componentId, {
+          size: { w: 4, h: 3 },
+        });
+        return {
+          text: "I've made the component bigger! It's now 4x3 grid units.",
+          suggestions: [
+            "make it smaller",
+            "change color to blue",
+            "change title",
+          ],
+        };
+      }
+
+      if (
+        lowerInput.includes("make it smaller") ||
+        lowerInput.includes("decrease size") ||
+        lowerInput.includes("smaller")
+      ) {
+        console.log("Making component smaller:", componentId);
+        onUpdateComponent(componentId, {
+          size: { w: 2, h: 2 },
+        });
+        return {
+          text: "I've made the component smaller! It's now 2x2 grid units.",
+          suggestions: [
+            "make it bigger",
+            "change color to blue",
+            "change title",
+          ],
+        };
+      }
+
+      // Handle title changes
+      if (
+        lowerInput.includes("change title") ||
+        lowerInput.includes("update title")
+      ) {
+        const newTitle = extractNewTitle(input);
+        if (newTitle) {
+          onUpdateComponent(componentId, {
+            title: newTitle,
+            content: (
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#f8f9fa",
+                  borderRadius: "8px",
+                  height: "100%",
+                  border: "2px solid #dee2e6",
+                }}
+              >
+                <h3
+                  style={{
+                    margin: "0 0 12px 0",
+                    color: "#333",
+                    fontSize: "16px",
+                  }}
+                >
+                  {newTitle}
+                </h3>
+                <div style={{ fontSize: "14px", color: "#666" }}>
+                  Title updated successfully!
+                </div>
+              </div>
+            ),
+          });
+          return {
+            text: `I've updated the title to "${newTitle}"!`,
+            suggestions: [
+              "change color to blue",
+              "make it bigger",
+              "change content",
+            ],
+          };
+        }
+      }
+    }
 
     if (
       lowerInput.includes("add") ||
@@ -158,6 +385,23 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
     };
   };
 
+  const extractNewTitle = (input: string): string | null => {
+    const titleMatch = input.match(/title\s+(?:to\s+)?["']?([^"']+)["']?/i);
+    if (titleMatch) {
+      return titleMatch[1];
+    }
+
+    // Try to extract title after "change title" or "update title"
+    const changeMatch = input.match(
+      /(?:change|update)\s+title\s+(?:to\s+)?(.+)/i
+    );
+    if (changeMatch) {
+      return changeMatch[1].trim();
+    }
+
+    return null;
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -168,15 +412,12 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   const handleAddComponent = (component: DraggableComponent) => {
     if (onAddComponentToDashboard) {
       onAddComponentToDashboard(component);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          text: `Added ${component.title} to dashboard`,
-          sender: "ai",
-          timestamp: new Date(),
-        },
-      ]);
+      onAddMessage?.({
+        id: Date.now().toString(),
+        text: `Added ${component.title} to dashboard`,
+        sender: "ai",
+        timestamp: new Date(),
+      });
       setShowComponentPanel(false);
     }
   };
@@ -311,14 +552,21 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
       <div style={styles.header} onClick={onToggleMinimize}>
         <h3 style={styles.headerTitle}>AI Assistant</h3>
         <div style={styles.headerActions}>
-          <button style={styles.actionButton} onClick={onToggleMinimize}>
+          <button
+            style={styles.actionButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onToggleMinimize();
+            }}
+          >
             {isMinimized ? "□" : "−"}
           </button>
         </div>
       </div>
       <div style={styles.content}>
         <div style={styles.messagesContainer}>
-          {messages.map((message) => (
+          {initialMessages.map((message) => (
             <div
               key={message.id}
               style={{

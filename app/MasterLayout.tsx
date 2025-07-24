@@ -8,8 +8,16 @@ import React, {
 import ResponsiveGridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import type { DraggableComponent } from "./Dashboard/ComponentLibrary";
-import ComponentChat from "./Dashboard/ComponentChat";
 import AIChatComponent from "./Dashboard/AIChatComponent";
+
+interface Message {
+  id: string;
+  text: string;
+  sender: "user" | "ai";
+  timestamp: Date;
+  component?: DraggableComponent;
+  suggestions?: any[]; // Use any[] to handle both string[] and DraggableComponent[]
+}
 
 interface MasterLayoutProps {
   children?: React.ReactNode[];
@@ -52,6 +60,9 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
   ) => {
     const [openChats, setOpenChats] = useState<Set<string>>(new Set());
     const [state, setState] = useState<State>({ layout: [], components: [] });
+    const [conversationHistory, setConversationHistory] = useState<
+      Record<string, Message[]>
+    >({});
 
     // Initialize state with components prop
     useEffect(() => {
@@ -185,6 +196,17 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       onUpdateComponent?.(componentId, updates);
     };
 
+    const addMessageToHistory = (componentId: string, message: Message) => {
+      setConversationHistory((prev) => ({
+        ...prev,
+        [componentId]: [...(prev[componentId] || []), message],
+      }));
+    };
+
+    const getConversationHistory = (componentId: string): Message[] => {
+      return conversationHistory[componentId] || [];
+    };
+
     useImperativeHandle(ref, () => ({ addLayoutItem, removeLayoutItem }));
 
     const onLayoutChange = useCallback(
@@ -222,107 +244,106 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
             <div
               key={component.id}
               style={{
-                border: "1px solid #ccc",
-                cursor: "move",
-                position: "relative",
-                backgroundColor: "#f8f8f8",
-                overflow: "hidden",
                 width: "100%",
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
+              {/* App Bar */}
               <div
                 style={{
-                  position: "absolute",
-                  top: "4px",
-                  right: "4px",
-                  zIndex: 1000,
+                  height: "32px",
+                  backgroundColor: "#f5f5f5",
+                  borderBottom: "1px solid #e0e0e0",
                   display: "flex",
-                  gap: "4px",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 8px",
+                  fontSize: "12px",
+                  color: "#666",
                 }}
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    console.log(
-                      "Chat button clicked for component:",
-                      component.id
-                    );
-                    toggleChat(component.id);
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  onMouseUp={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  style={{
-                    background: "#f0f0f0",
-                    border: "1px solid #ccc",
-                    borderRadius: "2px",
-                    width: "24px",
-                    height: "24px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 1001,
-                  }}
-                  title="Chat with component"
-                >
-                  💬
-                </button>
-                <button
-                  data-no-drag="true"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    removeLayoutItem(component.id);
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  onMouseUp={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  style={{
-                    background: "#ff6b6b",
-                    color: "white",
-                    border: "1px solid #ff5252",
-                    borderRadius: "2px",
-                    width: "24px",
-                    height: "24px",
-                    fontSize: "14px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    zIndex: 1001,
-                  }}
-                  title="Remove component"
-                >
-                  ×
-                </button>
+                <div style={{ fontWeight: "500" }}>{component.id}</div>
+                <div style={{ display: "flex", gap: "4px" }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      console.log(
+                        "Chat button clicked for component:",
+                        component.id
+                      );
+                      toggleChat(component.id);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onMouseUp={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "4px",
+                    }}
+                    title="Chat with component"
+                  >
+                    💬
+                  </button>
+                  <button
+                    data-no-drag="true"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      removeLayoutItem(component.id);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onMouseUp={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "14px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "24px",
+                      height: "24px",
+                      borderRadius: "4px",
+                    }}
+                    title="Remove component"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
+              {/* Component Content */}
               <div
                 style={{
-                  padding: "4px",
                   flex: 1,
                   display: "flex",
                   flexDirection: "column",
@@ -366,52 +387,45 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               >
-                {component.type === "empty" ? (
-                  <AIChatComponent
-                    key={`ai-chat-${componentId}`}
-                    isMinimized={false}
-                    onToggleMinimize={() => toggleChat(componentId)}
-                    onAddComponentToDashboard={(newComponent) => {
-                      const replacementComponent = {
-                        ...newComponent,
-                        id: `${newComponent.type}-${Math.floor(
-                          Math.random() * 10000
-                        )}`,
+                <AIChatComponent
+                  key={`ai-chat-${componentId}`}
+                  isMinimized={false}
+                  onToggleMinimize={() => toggleChat(componentId)}
+                  messages={getConversationHistory(componentId)}
+                  onAddMessage={(message) =>
+                    addMessageToHistory(componentId, message)
+                  }
+                  onAddComponentToDashboard={(newComponent) => {
+                    // Replace the empty component with the new component content
+                    setState((prev) => {
+                      const emptyComponent = prev.components.find(
+                        (c) => c.id === componentId
+                      );
+                      if (!emptyComponent) return prev;
+
+                      const updatedComponent = {
+                        ...emptyComponent,
+                        type: newComponent.type,
+                        title: newComponent.title,
+                        content: newComponent.content,
+                        size: newComponent.size,
+                        minSize: newComponent.minSize,
+                        maxSize: newComponent.maxSize,
                       };
-                      toggleChat(componentId);
-                      setTimeout(() => {
-                        setState((prev) => {
-                          const emptyComponent = prev.components.find(
-                            (c) => c.id === componentId
-                          );
-                          if (!emptyComponent) return prev;
-                          return {
-                            layout: prev.layout.map((item) =>
-                              item.i === componentId
-                                ? { ...item, i: replacementComponent.id }
-                                : item
-                            ),
-                            components: prev.components.map((comp) =>
-                              comp.id === componentId
-                                ? replacementComponent
-                                : comp
-                            ),
-                          };
-                        });
-                      }, 150);
-                    }}
-                    dashboardComponents={stateComponents}
-                  />
-                ) : (
-                  <ComponentChat
-                    key={`component-chat-${componentId}`}
-                    componentId={componentId}
-                    componentTitle={component.title || "Dashboard Component"}
-                    isOpen
-                    onToggle={() => toggleChat(componentId)}
-                    onUpdateComponent={handleComponentUpdate}
-                  />
-                )}
+
+                      return {
+                        ...prev,
+                        components: prev.components.map((comp) =>
+                          comp.id === componentId ? updatedComponent : comp
+                        ),
+                      };
+                    });
+                  }}
+                  onUpdateComponent={handleComponentUpdate}
+                  componentId={componentId}
+                  componentTitle={component.title}
+                  dashboardComponents={stateComponents}
+                />
               </div>
             );
           }
@@ -427,16 +441,33 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           const componentWidth = layoutItem.w * cellWidth - margin;
           const componentHeight = layoutItem.h * cellHeight - margin;
 
-          // Position chat close to the component (top-right corner)
-          const chatLeft = componentLeft + componentWidth - 300; // 300px is chat width
-          const chatTop = componentTop - 350; // 350px above component
+          // Position chat to align right corners and offset for button visibility
+          // Align chat right corner with component right corner
+          let chatLeft = componentLeft + componentWidth - 300; // 300px is chat width
+          let chatTop = componentTop + 40; // Offset down by 40px for button visibility
 
-          // Ensure chat doesn't go off-screen
-          const finalChatLeft = Math.max(
-            10,
-            Math.min(chatLeft, window.innerWidth - 310)
-          );
-          const finalChatTop = Math.max(10, chatTop);
+          // If chat would go off-screen to the left, adjust position
+          if (chatLeft < 10) {
+            chatLeft = 10; // Keep minimum left margin
+          }
+
+          // If chat would go off-screen to the right, adjust position
+          if (chatLeft + 300 > window.innerWidth - 10) {
+            chatLeft = window.innerWidth - 310; // Keep minimum right margin
+          }
+
+          // If chat would go off-screen below, move it up
+          if (chatTop + 350 > window.innerHeight - 10) {
+            chatTop = componentTop - 350; // Above component
+          }
+
+          // If chat would go off-screen above, move it down
+          if (chatTop < 10) {
+            chatTop = 10; // Keep minimum top margin
+          }
+
+          const finalChatLeft = chatLeft;
+          const finalChatTop = chatTop;
 
           return (
             <div
@@ -453,59 +484,45 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
               }}
             >
-              {component.type === "empty" ? (
-                <AIChatComponent
-                  key={`ai-chat-${componentId}`}
-                  isMinimized={false}
-                  onToggleMinimize={() => toggleChat(componentId)}
-                  onAddComponentToDashboard={(newComponent) => {
-                    // Create a new instance with unique ID
-                    const replacementComponent = {
-                      ...newComponent,
-                      id: `${newComponent.type}-${Math.floor(
-                        Math.random() * 10000
-                      )}`,
+              <AIChatComponent
+                key={`ai-chat-${componentId}`}
+                isMinimized={false}
+                onToggleMinimize={() => toggleChat(componentId)}
+                messages={getConversationHistory(componentId)}
+                onAddMessage={(message) =>
+                  addMessageToHistory(componentId, message)
+                }
+                onAddComponentToDashboard={(newComponent) => {
+                  // Replace the empty component with the new component content
+                  setState((prev) => {
+                    const emptyComponent = prev.components.find(
+                      (c) => c.id === componentId
+                    );
+                    if (!emptyComponent) return prev;
+
+                    const updatedComponent = {
+                      ...emptyComponent,
+                      type: newComponent.type,
+                      title: newComponent.title,
+                      content: newComponent.content,
+                      size: newComponent.size,
+                      minSize: newComponent.minSize,
+                      maxSize: newComponent.maxSize,
                     };
 
-                    // Close the chat first
-                    toggleChat(componentId);
-
-                    // Replace the empty component with a delay to ensure proper state update
-                    setTimeout(() => {
-                      setState((prev) => {
-                        // Find the empty component to replace
-                        const emptyComponent = prev.components.find(
-                          (c) => c.id === componentId
-                        );
-                        if (!emptyComponent) return prev;
-
-                        return {
-                          layout: prev.layout.map((item) =>
-                            item.i === componentId
-                              ? { ...item, i: replacementComponent.id }
-                              : item
-                          ),
-                          components: prev.components.map((comp) =>
-                            comp.id === componentId
-                              ? replacementComponent
-                              : comp
-                          ),
-                        };
-                      });
-                    }, 150);
-                  }}
-                  dashboardComponents={stateComponents}
-                />
-              ) : (
-                <ComponentChat
-                  key={`component-chat-${componentId}`}
-                  componentId={componentId}
-                  componentTitle={component.title || "Dashboard Component"}
-                  isOpen
-                  onToggle={() => toggleChat(componentId)}
-                  onUpdateComponent={handleComponentUpdate}
-                />
-              )}
+                    return {
+                      ...prev,
+                      components: prev.components.map((comp) =>
+                        comp.id === componentId ? updatedComponent : comp
+                      ),
+                    };
+                  });
+                }}
+                onUpdateComponent={handleComponentUpdate}
+                componentId={componentId}
+                componentTitle={component.title}
+                dashboardComponents={stateComponents}
+              />
             </div>
           );
         })}

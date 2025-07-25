@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import MasterLayout, { type MasterLayoutRef } from "~/MasterLayout";
 import type { DraggableComponent } from "./ComponentLibrary";
-import { componentLibrary } from "./ComponentLibrary";
 
 // Add CSS for pulse animation
 const pulseAnimation = `
@@ -30,7 +29,10 @@ const Dashboard: React.FC = () => {
 
       // Add to master layout if ref is available
       if (masterLayoutRef.current) {
-        masterLayoutRef.current.addLayoutItem(newComponent);
+        // Use setTimeout to ensure state update happens first
+        setTimeout(() => {
+          masterLayoutRef.current?.addLayoutItem(newComponent);
+        }, 0);
       }
     }
   };
@@ -48,12 +50,17 @@ const Dashboard: React.FC = () => {
     componentId: string,
     updates: Partial<DraggableComponent>
   ) => {
-    console.log("Updating component:", componentId, "with updates:", updates);
+    console.log(
+      "Dashboard: Updating component:",
+      componentId,
+      "with updates:",
+      updates
+    );
     setDashboardComponents((prev) => {
       const updated = prev.map((component) =>
         component.id === componentId ? { ...component, ...updates } : component
       );
-      console.log("Updated components:", updated);
+      console.log("Dashboard: Updated components:", updated);
       return updated;
     });
   };
@@ -196,7 +203,8 @@ const Dashboard: React.FC = () => {
             components={dashboardComponents}
             onComponentRemove={handleRemoveComponentFromDashboard}
             onUpdateComponent={handleUpdateComponent}
-          ></MasterLayout>
+            onAddComponentToDashboard={handleAddComponentToDashboard}
+          />
         </main>
       </div>
 

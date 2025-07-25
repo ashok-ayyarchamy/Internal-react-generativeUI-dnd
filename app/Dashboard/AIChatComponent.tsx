@@ -23,29 +23,62 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   isMinimized,
   onToggleMinimize,
   onAddComponentToDashboard,
-  messages = [],
+  messages: externalMessages,
   onAddMessage,
 }) => {
-  // Initialize with welcome message if no messages exist
-  const initialMessages: Message[] =
-    messages.length === 0
-      ? [
-          {
-            id: "1",
-            text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
-            sender: "ai",
-            timestamp: new Date(),
-          },
-        ]
-      : messages;
+  // Props validation
+  if (typeof isMinimized !== "boolean") {
+    console.error("AIChatComponent: isMinimized prop must be a boolean");
+    return null;
+  }
+
+  if (typeof onToggleMinimize !== "function") {
+    console.error("AIChatComponent: onToggleMinimize prop must be a function");
+    return null;
+  }
+  // Internal state for messages - this component manages its own chat history
+  const [internalMessages, setInternalMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showComponentPanel, setShowComponentPanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Use external messages if provided, otherwise use internal messages
+  const messages = externalMessages || internalMessages;
+
+  // Initialize with welcome message if no messages exist
+  useEffect(() => {
+    if (messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: "1",
+        text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
+        sender: "ai",
+        timestamp: new Date(),
+      };
+
+      if (externalMessages) {
+        // If using external messages, notify parent
+        onAddMessage?.(welcomeMessage);
+      } else {
+        // If using internal messages, update internal state
+        setInternalMessages([welcomeMessage]);
+      }
+    }
+  }, [messages.length, externalMessages, onAddMessage]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [initialMessages]);
+  }, [messages]);
+
+  const addMessage = (message: Message) => {
+    if (externalMessages) {
+      // If using external messages, notify parent
+      onAddMessage?.(message);
+    } else {
+      // If using internal messages, update internal state
+      setInternalMessages((prev) => [...prev, message]);
+    }
+  };
 
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
@@ -57,7 +90,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
       timestamp: new Date(),
     };
 
-    onAddMessage?.(userMessage);
+    addMessage(userMessage);
     setInputText("");
     setIsLoading(true);
 
@@ -74,7 +107,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
             suggestions: response.suggestions,
           }),
         };
-        onAddMessage?.(aiMessage);
+        addMessage(aiMessage);
       }
       setIsLoading(false);
     }, 1000);
@@ -169,7 +202,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   const handleAddComponent = (component: DraggableComponent) => {
     if (onAddComponentToDashboard) {
       onAddComponentToDashboard(component);
-      onAddMessage?.({
+      addMessage({
         id: Date.now().toString(),
         text: `Added ${component.title} to dashboard`,
         sender: "ai",
@@ -329,7 +362,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
       </div>
       <div style={styles.content}>
         <div style={styles.messagesContainer}>
-          {initialMessages.map((message) => (
+          {messages.map((message) => (
             <div
               key={message.id}
               style={{
@@ -349,86 +382,11 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
               >
                 {message.text}
               </div>
-              {message.component && (
-                <div style={styles.componentPanel}>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      marginBottom: "8px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Component Preview:
-                  </div>
-                  <div
-                    style={{
-                      transform: "scale(0.8)",
-                      transformOrigin: "top left",
-                    }}
-                  >
-                    {message.component.content}
-                  </div>
-                </div>
-              )}
-              {message.suggestions && (
-                <div style={styles.componentPanel}>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      marginBottom: "8px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Available Components:
-                  </div>
-                  <div style={styles.componentGrid}>
-                    {message.suggestions.map((component) => (
-                      <div
-                        key={component.id}
-                        style={styles.componentCard}
-                        onClick={() => handleAddComponent(component)}
-                      >
-                        {component.title}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               <div style={styles.messageTime}>
                 {message.timestamp.toLocaleTimeString()}
               </div>
             </div>
           ))}
-          {showComponentPanel && (
-            <div style={styles.message}>
-              <div style={styles.aiMessage}>
-                <div style={styles.aiBubble}>
-                  <div style={styles.componentPanel}>
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        marginBottom: "8px",
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Available Components:
-                    </div>
-                    <div style={styles.componentGrid}>
-                      {componentLibrary.map((component) => (
-                        <div
-                          key={component.id}
-                          style={styles.componentCard}
-                          onClick={() => handleAddComponent(component)}
-                        >
-                          {component.title}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
           {isLoading && (
             <div style={styles.message}>
               <div style={styles.aiMessage}>

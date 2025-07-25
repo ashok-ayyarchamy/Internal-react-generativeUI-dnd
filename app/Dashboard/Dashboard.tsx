@@ -91,7 +91,7 @@ const Dashboard: React.FC = () => {
       ),
       size: { w: 2, h: 2 },
       minSize: { w: 2, h: 2 },
-      maxSize: { w: 8, h: 6 },
+      maxSize: { w: 12, h: 50 }, // Increased from h: 6 to h: 50
     };
 
     setDashboardComponents((prev) => [...prev, emptyComponent]);

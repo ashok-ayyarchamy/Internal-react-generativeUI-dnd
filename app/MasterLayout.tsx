@@ -67,6 +67,21 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
     const chatMessagesRef = useRef<Map<string, any[]>>(new Map());
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Calculate dynamic container height based on layout
+    const calculateContainerHeight = useCallback(() => {
+      if (layout.length === 0) return 600; // Default height
+
+      const maxRow = Math.max(...layout.map((item) => item.y + item.h));
+      const rowHeight = 40;
+      const margin = 8;
+      const containerPadding = 8;
+      const minHeight = 600;
+
+      const calculatedHeight =
+        maxRow * rowHeight + (maxRow - 1) * margin + containerPadding * 2;
+      return Math.max(calculatedHeight, minHeight);
+    }, [layout]);
+
     // Calculate container width
     useEffect(() => {
       const updateWidth = () => {
@@ -82,7 +97,14 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
 
     const calculateOptimalPosition = useCallback(
       (component: DraggableComponent) => {
-        for (let y = 0; y < 20; y++) {
+        // Calculate the maximum needed rows based on existing components and the new component
+        const maxExistingRow =
+          layout.length > 0
+            ? Math.max(...layout.map((item) => item.y + item.h))
+            : 0;
+        const maxNeededRows = Math.max(maxExistingRow + component.size.h, 50); // Allow up to 50 rows by default
+
+        for (let y = 0; y < maxNeededRows; y++) {
           for (let x = 0; x <= 12 - component.size.w; x++) {
             const newItem = { x, y, w: component.size.w, h: component.size.h };
             if (
@@ -116,7 +138,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           minW: component.minSize?.w || 1,
           maxW: component.maxSize?.w || 12,
           minH: component.minSize?.h || 1,
-          maxH: component.maxSize?.h || 12,
+          maxH: component.maxSize?.h || 50, // Increased from 12 to 50 to allow taller components
         };
       },
       []
@@ -287,7 +309,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         ref={containerRef}
         style={{
           width: "100%",
-          height: "600px",
+          height: calculateContainerHeight(),
           position: "relative",
           overflow: "visible",
         }}
@@ -302,7 +324,10 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           onLayoutChange={onLayoutChange}
           margin={[8, 8]}
           containerPadding={[8, 8]}
-          style={{ minHeight: "600px", overflow: "visible" }}
+          style={{
+            minHeight: `${calculateContainerHeight()}px`,
+            overflow: "visible",
+          }}
         >
           {components.map((component) => (
             <div key={component.id} style={{ width: "100%", height: "100%" }}>

@@ -15,29 +15,16 @@ interface AIChatComponentProps {
   isMinimized: boolean;
   onToggleMinimize: () => void;
   onAddComponentToDashboard?: (component: DraggableComponent) => void;
-  onRemoveComponentFromDashboard?: (componentId: string) => void;
-  onUpdateComponent?: (
-    componentId: string,
-    updates: Partial<DraggableComponent>
-  ) => void;
-  dashboardComponents?: DraggableComponent[];
   messages?: Message[];
   onAddMessage?: (message: Message) => void;
-  componentId?: string;
-  componentTitle?: string;
 }
 
 const AIChatComponent: React.FC<AIChatComponentProps> = ({
   isMinimized,
   onToggleMinimize,
   onAddComponentToDashboard,
-  onRemoveComponentFromDashboard,
-  onUpdateComponent,
-  dashboardComponents = [],
   messages = [],
   onAddMessage,
-  componentId,
-  componentTitle,
 }) => {
   // Initialize with welcome message if no messages exist
   const initialMessages: Message[] =
@@ -76,15 +63,19 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
 
     setTimeout(() => {
       const response = processUserInput(inputText);
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: response.text,
-        sender: "ai",
-        timestamp: new Date(),
-        component: response.component,
-        suggestions: response.suggestions,
-      };
-      onAddMessage?.(aiMessage);
+      if (response) {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: response.text,
+          sender: "ai",
+          timestamp: new Date(),
+          ...("component" in response && { component: response.component }),
+          ...("suggestions" in response && {
+            suggestions: response.suggestions,
+          }),
+        };
+        onAddMessage?.(aiMessage);
+      }
       setIsLoading(false);
     }, 1000);
   };
@@ -98,214 +89,6 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
         return { text: message, component };
       }
     };
-
-    // Handle component modifications if componentId is provided
-    if (componentId && onUpdateComponent) {
-      // Handle color changes
-      if (
-        lowerInput.includes("change color") ||
-        lowerInput.includes("make it")
-      ) {
-        if (lowerInput.includes("blue")) {
-          console.log("Updating component to blue theme:", componentId);
-          onUpdateComponent(componentId, {
-            content: (
-              <div
-                style={{
-                  padding: "16px",
-                  backgroundColor: "#e3f2fd",
-                  borderRadius: "8px",
-                  height: "100%",
-                  border: "2px solid #1976d2",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 12px 0",
-                    color: "#1976d2",
-                    fontSize: "16px",
-                  }}
-                >
-                  {componentTitle || "Component"} (Blue Theme)
-                </h3>
-                <div style={{ fontSize: "14px", color: "#666" }}>
-                  Component updated with blue color scheme!
-                </div>
-              </div>
-            ),
-          });
-          return {
-            text: "I've updated the component with a blue color scheme! The component now has a blue background and border.",
-            suggestions: [
-              "change color to green",
-              "change color to purple",
-              "make it bigger",
-              "change title",
-            ],
-          };
-        }
-        if (lowerInput.includes("green")) {
-          console.log("Updating component to green theme:", componentId);
-          onUpdateComponent(componentId, {
-            content: (
-              <div
-                style={{
-                  padding: "16px",
-                  backgroundColor: "#e8f5e8",
-                  borderRadius: "8px",
-                  height: "100%",
-                  border: "2px solid #2e7d32",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 12px 0",
-                    color: "#2e7d32",
-                    fontSize: "16px",
-                  }}
-                >
-                  {componentTitle || "Component"} (Green Theme)
-                </h3>
-                <div style={{ fontSize: "14px", color: "#666" }}>
-                  Component updated with green color scheme!
-                </div>
-              </div>
-            ),
-          });
-          return {
-            text: "I've updated the component with a green color scheme! The component now has a green background and border.",
-            suggestions: [
-              "change color to blue",
-              "change color to purple",
-              "make it bigger",
-              "change title",
-            ],
-          };
-        }
-        if (lowerInput.includes("purple")) {
-          console.log("Updating component to purple theme:", componentId);
-          onUpdateComponent(componentId, {
-            content: (
-              <div
-                style={{
-                  padding: "16px",
-                  backgroundColor: "#f3e5f5",
-                  borderRadius: "8px",
-                  height: "100%",
-                  border: "2px solid #7b1fa2",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 12px 0",
-                    color: "#7b1fa2",
-                    fontSize: "16px",
-                  }}
-                >
-                  {componentTitle || "Component"} (Purple Theme)
-                </h3>
-                <div style={{ fontSize: "14px", color: "#666" }}>
-                  Component updated with purple color scheme!
-                </div>
-              </div>
-            ),
-          });
-          return {
-            text: "I've updated the component with a purple color scheme! The component now has a purple background and border.",
-            suggestions: [
-              "change color to blue",
-              "change color to green",
-              "make it bigger",
-              "change title",
-            ],
-          };
-        }
-      }
-
-      // Handle size changes
-      if (
-        lowerInput.includes("make it bigger") ||
-        lowerInput.includes("increase size") ||
-        lowerInput.includes("bigger")
-      ) {
-        console.log("Making component bigger:", componentId);
-        onUpdateComponent(componentId, {
-          size: { w: 4, h: 3 },
-        });
-        return {
-          text: "I've made the component bigger! It's now 4x3 grid units.",
-          suggestions: [
-            "make it smaller",
-            "change color to blue",
-            "change title",
-          ],
-        };
-      }
-
-      if (
-        lowerInput.includes("make it smaller") ||
-        lowerInput.includes("decrease size") ||
-        lowerInput.includes("smaller")
-      ) {
-        console.log("Making component smaller:", componentId);
-        onUpdateComponent(componentId, {
-          size: { w: 2, h: 2 },
-        });
-        return {
-          text: "I've made the component smaller! It's now 2x2 grid units.",
-          suggestions: [
-            "make it bigger",
-            "change color to blue",
-            "change title",
-          ],
-        };
-      }
-
-      // Handle title changes
-      if (
-        lowerInput.includes("change title") ||
-        lowerInput.includes("update title")
-      ) {
-        const newTitle = extractNewTitle(input);
-        if (newTitle) {
-          onUpdateComponent(componentId, {
-            title: newTitle,
-            content: (
-              <div
-                style={{
-                  padding: "16px",
-                  backgroundColor: "#f8f9fa",
-                  borderRadius: "8px",
-                  height: "100%",
-                  border: "2px solid #dee2e6",
-                }}
-              >
-                <h3
-                  style={{
-                    margin: "0 0 12px 0",
-                    color: "#333",
-                    fontSize: "16px",
-                  }}
-                >
-                  {newTitle}
-                </h3>
-                <div style={{ fontSize: "14px", color: "#666" }}>
-                  Title updated successfully!
-                </div>
-              </div>
-            ),
-          });
-          return {
-            text: `I've updated the title to "${newTitle}"!`,
-            suggestions: [
-              "change color to blue",
-              "make it bigger",
-              "change content",
-            ],
-          };
-        }
-      }
-    }
 
     if (
       lowerInput.includes("add") ||
@@ -365,15 +148,6 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
       };
     }
 
-    if (lowerInput.includes("remove") && lowerInput.includes("component")) {
-      const match = input.match(/remove\s+(\w+)/i);
-      const componentId = match ? match[1] : null;
-      if (componentId && onRemoveComponentFromDashboard) {
-        onRemoveComponentFromDashboard(componentId);
-        return { text: "I've removed the component from your dashboard." };
-      }
-    }
-
     if (lowerInput.includes("help") || lowerInput.includes("what can you do")) {
       return {
         text: "I can help you manage your dashboard! Try saying 'add chart' or 'show components'.",
@@ -383,23 +157,6 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
     return {
       text: `I received your message: "${input}". You can ask me to add specific components or say 'show components'.`,
     };
-  };
-
-  const extractNewTitle = (input: string): string | null => {
-    const titleMatch = input.match(/title\s+(?:to\s+)?["']?([^"']+)["']?/i);
-    if (titleMatch) {
-      return titleMatch[1];
-    }
-
-    // Try to extract title after "change title" or "update title"
-    const changeMatch = input.match(
-      /(?:change|update)\s+title\s+(?:to\s+)?(.+)/i
-    );
-    if (changeMatch) {
-      return changeMatch[1].trim();
-    }
-
-    return null;
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -170,32 +170,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       [onComponentRemove]
     );
 
-    const handleComponentUpdate = (
-      componentId: string,
-      updates: Partial<DraggableComponent>
-    ) => {
-      setState((prev) => {
-        const updatedComponents = prev.components.map((component) =>
-          component.id === componentId
-            ? { ...component, ...updates }
-            : component
-        );
-        const updatedLayout = updates.size
-          ? prev.layout.map((item) =>
-              item.i === componentId
-                ? { ...item, w: updates.size!.w, h: updates.size!.h }
-                : item
-            )
-          : prev.layout;
-        return {
-          ...prev,
-          components: updatedComponents,
-          layout: updatedLayout,
-        };
-      });
-      onUpdateComponent?.(componentId, updates);
-    };
-
     const addMessageToHistory = (componentId: string, message: Message) => {
       setConversationHistory((prev) => ({
         ...prev,
@@ -402,10 +376,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                       };
                     });
                   }}
-                  onUpdateComponent={handleComponentUpdate}
-                  componentId={componentId}
-                  componentTitle={component.title}
-                  dashboardComponents={stateComponents}
                 />
               </div>
             );
@@ -500,10 +470,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
                     };
                   });
                 }}
-                onUpdateComponent={handleComponentUpdate}
-                componentId={componentId}
-                componentTitle={component.title}
-                dashboardComponents={stateComponents}
               />
             </div>
           );

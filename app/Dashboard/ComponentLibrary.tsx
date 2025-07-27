@@ -21,9 +21,6 @@ export interface DraggableComponent {
   type: string;
   title: string;
   content: React.ReactNode;
-  size: { w: number; h: number };
-  minSize?: { w: number; h: number };
-  maxSize?: { w: number; h: number };
 }
 
 // Sample data for components
@@ -81,36 +78,24 @@ export const componentLibrary: DraggableComponent[] = [
     content: (
       <AnalyticsChart data={chartData} className="dashboard-component" />
     ),
-    size: { w: 6, h: 5 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 6 to h: 50
   },
   {
     id: "table-1",
     type: "table",
     title: "Data Table",
     content: <DataTable data={tableData} className="dashboard-component" />,
-    size: { w: 8, h: 6 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 8 to h: 50
   },
   {
     id: "card-1",
     type: "card",
     title: "Info Card",
     content: <InfoCard data={cardData} className="dashboard-component" />,
-    size: { w: 4, h: 4 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 5 to h: 50
   },
   {
     id: "metric-1",
     type: "metric",
     title: "Key Metric",
     content: <KeyMetric data={metricData} className="dashboard-component" />,
-    size: { w: 3, h: 3 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 4 to h: 50
   },
   {
     id: "gauge-1",
@@ -119,9 +104,6 @@ export const componentLibrary: DraggableComponent[] = [
     content: (
       <PerformanceGauge data={gaugeData} className="dashboard-component" />
     ),
-    size: { w: 4, h: 4 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 5 to h: 50
   },
   {
     id: "list-1",
@@ -130,9 +112,6 @@ export const componentLibrary: DraggableComponent[] = [
     content: (
       <ActivityList data={activityData} className="dashboard-component" />
     ),
-    size: { w: 5, h: 6 },
-    minSize: { w: 1, h: 1 },
-    maxSize: { w: 12, h: 50 }, // Increased from h: 8 to h: 50
   },
 ];
 

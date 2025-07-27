@@ -11,6 +11,15 @@ import "react-grid-layout/css/styles.css";
 import type { DraggableComponent } from "./Dashboard/ComponentLibrary";
 import ComponentWrapper from "./Dashboard/ComponentWrapper";
 import AIChatComponent from "./Dashboard/AIChatComponent";
+import {
+  saveLayoutState,
+  loadLayoutState,
+  serializeComponent,
+  deserializeComponent,
+  type StoredComponentConfig,
+  type StoredLayoutItem,
+} from "./utils/localStorageUtils";
+import { componentLibrary } from "./Dashboard/ComponentLibrary";
 
 interface MasterLayoutProps {
   children?: React.ReactNode[];
@@ -21,6 +30,7 @@ interface MasterLayoutProps {
     updates: Partial<DraggableComponent>
   ) => void;
   onAddComponentToDashboard?: (component: DraggableComponent) => void;
+  onRestoreComponents?: (components: DraggableComponent[]) => void;
 }
 
 interface LayoutItem {
@@ -45,11 +55,11 @@ export interface MasterLayoutRef {
 const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
   (
     {
-      children,
       components = [],
       onComponentRemove,
       onUpdateComponent,
       onAddComponentToDashboard,
+      onRestoreComponents,
     },
     ref
   ) => {
@@ -66,6 +76,108 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
     // Use ref to store chat messages persistently
     const chatMessagesRef = useRef<Map<string, any[]>>(new Map());
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Flag to prevent saving during initial load
+    const isInitialLoadRef = useRef(true);
+    const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+
+    // Function to recreate component content based on type
+    const recreateComponentContent = useCallback(
+      (type: string, title: string): React.ReactNode => {
+        // Find a template component of the same type
+        const templateComponent = componentLibrary.find(
+          (comp) => comp.type === type
+        );
+
+        if (templateComponent) {
+          // Return the content directly since it already has the proper props
+          return templateComponent.content;
+        }
+
+        // Fallback for unknown component types
+        return (
+          <div
+            style={{
+              padding: "20px",
+              textAlign: "center",
+              color: "#666",
+              fontSize: "14px",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#f8f9fa",
+              border: "2px dashed #dee2e6",
+            }}
+          >
+            {title || `Unknown Component: ${type}`}
+          </div>
+        );
+      },
+      []
+    );
+
+    // Load saved layout and components on mount
+    useEffect(() => {
+      // Only run once on mount
+      if (!isInitialLoadRef.current) {
+        return;
+      }
+
+      const savedState = loadLayoutState();
+      if (savedState) {
+        // Restore layout
+        setLayout(savedState.layout);
+
+        // Restore components by recreating them from the saved config
+        if (savedState.components && savedState.components.length > 0) {
+          const restoredComponents = savedState.components.map(
+            (storedConfig) => {
+              const content = recreateComponentContent(
+                storedConfig.type,
+                storedConfig.title
+              );
+              return {
+                id: storedConfig.id,
+                type: storedConfig.type,
+                title: storedConfig.title,
+                content,
+              };
+            }
+          );
+
+          // Notify parent component about the restored components
+          onRestoreComponents?.(restoredComponents);
+        }
+
+        console.log("MasterLayout: Saved state", savedState);
+      }
+
+      // Mark initial load as complete
+      isInitialLoadRef.current = false;
+      setIsInitialLoadComplete(true);
+    }, [recreateComponentContent, onRestoreComponents]); // Add dependencies
+
+    // Save layout and components whenever they change
+    useEffect(() => {
+      // Don't save during initial load to prevent loops
+      if (isInitialLoadRef.current) {
+        return;
+      }
+
+      // Only save if we have meaningful data and avoid saving empty states
+      if (components.length > 0 || layout.length > 0) {
+        const serializedComponents = components.map(serializeComponent);
+        console.log(
+          "MasterLayout: Saving layout with",
+          serializedComponents,
+          "components and",
+          layout,
+          "layout items"
+        );
+        saveLayoutState(serializedComponents, layout);
+      }
+    }, [components, layout]);
 
     // Calculate dynamic container height based on layout
     const calculateContainerHeight = useCallback(() => {
@@ -102,11 +214,12 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           layout.length > 0
             ? Math.max(...layout.map((item) => item.y + item.h))
             : 0;
-        const maxNeededRows = Math.max(maxExistingRow + component.size.h, 50); // Allow up to 50 rows by default
+        const maxNeededRows = Math.max(maxExistingRow + 2, 50); // Default height of 2, allow up to 50 rows
 
         for (let y = 0; y < maxNeededRows; y++) {
-          for (let x = 0; x <= 12 - component.size.w; x++) {
-            const newItem = { x, y, w: component.size.w, h: component.size.h };
+          for (let x = 0; x <= 12 - 2; x++) {
+            // Default width of 2
+            const newItem = { x, y, w: 2, h: 2 }; // Default width and height of 2
             if (
               !layout.some(
                 (existing) =>
@@ -133,12 +246,12 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
     const calculateOptimalSize = useCallback(
       (component: DraggableComponent) => {
         return {
-          w: component.size.w,
-          h: component.size.h,
-          minW: component.minSize?.w || 1,
-          maxW: component.maxSize?.w || 12,
-          minH: component.minSize?.h || 1,
-          maxH: component.maxSize?.h || 50, // Increased from 12 to 50 to allow taller components
+          w: 2, // Default width
+          h: 2, // Default height
+          minW: 1,
+          maxW: 12,
+          minH: 1,
+          maxH: 50, // Allow up to 50 rows for taller components
         };
       },
       []
@@ -146,6 +259,11 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
 
     // Sync layout with components
     useEffect(() => {
+      // Don't sync during initial load to prevent overwriting restored layout
+      if (!isInitialLoadComplete) {
+        return;
+      }
+
       const newLayoutItems = components
         .filter(
           (comp) => !layout.some((layoutItem) => layoutItem.i === comp.id)
@@ -171,7 +289,13 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       if (newLayoutItems.length > 0) {
         setLayout((prev) => [...prev, ...newLayoutItems]);
       }
-    }, [components, layout, calculateOptimalPosition, calculateOptimalSize]);
+    }, [
+      components,
+      layout,
+      calculateOptimalPosition,
+      calculateOptimalSize,
+      isInitialLoadComplete,
+    ]);
 
     const addLayoutItem = useCallback(
       (component: DraggableComponent) => {
@@ -197,6 +321,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         };
 
         setLayout((prev) => [...prev, newLayoutItem]);
+        // Layout changes are automatically saved by the useEffect above
       },
       [layout, calculateOptimalPosition, calculateOptimalSize]
     );
@@ -205,6 +330,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       (id: string) => {
         setLayout((prev) => prev.filter((item) => item.i !== id));
         onComponentRemove?.(id);
+        // Layout changes are automatically saved by the useEffect above
       },
       [onComponentRemove]
     );
@@ -233,7 +359,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
 
     const handleAddComponentToDashboard = useCallback(
       (newComponent: DraggableComponent) => {
-        console.log("MasterLayout: Modifying component content:", newComponent);
         // Only modify the content of the current component, preserve chat state
         if (onUpdateComponent && chatState.componentId) {
           onUpdateComponent(chatState.componentId, {
@@ -291,18 +416,14 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
 
     useImperativeHandle(ref, () => ({ addLayoutItem, removeLayoutItem }));
 
-    const onLayoutChange = useCallback(
-      (newLayout: LayoutItem[]) => setLayout(newLayout),
-      []
-    );
+    const onLayoutChange = useCallback((newLayout: LayoutItem[]) => {
+      setLayout(newLayout);
+      // Layout changes are automatically saved by the useEffect above
+    }, []);
 
-    // Debug logging
-    console.log("MasterLayout render:", {
-      layout,
-      components,
-      containerWidth,
-      chatState,
-    });
+    const onResize = useCallback((layout: LayoutItem[]) => {
+      setLayout(layout);
+    }, []);
 
     return (
       <div
@@ -322,6 +443,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           cols={12}
           layout={layout}
           onLayoutChange={onLayoutChange}
+          onResize={onResize}
           margin={[8, 8]}
           containerPadding={[8, 8]}
           style={{

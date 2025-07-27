@@ -50,19 +50,23 @@ const Dashboard: React.FC = () => {
     componentId: string,
     updates: Partial<DraggableComponent>
   ) => {
-    console.log(
-      "Dashboard: Updating component:",
-      componentId,
-      "with updates:",
-      updates
-    );
     setDashboardComponents((prev) => {
       const updated = prev.map((component) =>
         component.id === componentId ? { ...component, ...updates } : component
       );
-      console.log("Dashboard: Updated components:", updated);
+
       return updated;
     });
+  };
+
+  const handleRestoreComponents = (
+    restoredComponents: DraggableComponent[]
+  ) => {
+    console.log(
+      "Dashboard: Restoring components from saved state",
+      restoredComponents
+    );
+    setDashboardComponents(restoredComponents);
   };
 
   const handleAddEmptyComponent = () => {
@@ -89,9 +93,6 @@ const Dashboard: React.FC = () => {
           Click the chat button to select a component
         </div>
       ),
-      size: { w: 2, h: 2 },
-      minSize: { w: 2, h: 2 },
-      maxSize: { w: 12, h: 50 }, // Increased from h: 6 to h: 50
     };
 
     setDashboardComponents((prev) => [...prev, emptyComponent]);
@@ -204,6 +205,7 @@ const Dashboard: React.FC = () => {
             onComponentRemove={handleRemoveComponentFromDashboard}
             onUpdateComponent={handleUpdateComponent}
             onAddComponentToDashboard={handleAddComponentToDashboard}
+            onRestoreComponents={handleRestoreComponents}
           />
         </main>
       </div>

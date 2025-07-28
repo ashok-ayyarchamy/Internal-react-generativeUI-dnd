@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import type { DraggableComponent } from "./ComponentLibrary";
 import { componentLibrary } from "./ComponentLibrary";
+import { loadChatMessages } from "~/utils/localStorageUtils";
 
 interface Message {
   id: string;
@@ -12,6 +13,7 @@ interface Message {
 }
 
 interface AIChatComponentProps {
+  componentId?: string;
   isMinimized: boolean;
   onToggleMinimize: () => void;
   onAddComponentToDashboard?: (component: DraggableComponent) => void;
@@ -20,6 +22,7 @@ interface AIChatComponentProps {
 }
 
 const AIChatComponent: React.FC<AIChatComponentProps> = ({
+  componentId,
   isMinimized,
   onToggleMinimize,
   onAddComponentToDashboard,
@@ -45,6 +48,16 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
 
   // Use external messages if provided, otherwise use internal messages
   const messages = externalMessages || internalMessages;
+
+  // Load messages from localStorage on mount if no external messages provided
+  useEffect(() => {
+    if (!externalMessages && componentId) {
+      const savedMessages = loadChatMessages(componentId);
+      if (savedMessages.length > 0) {
+        setInternalMessages(savedMessages);
+      }
+    }
+  }, [componentId, externalMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

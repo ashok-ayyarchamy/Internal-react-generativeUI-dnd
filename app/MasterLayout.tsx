@@ -16,6 +16,11 @@ import {
   loadLayoutState,
   serializeComponent,
   deserializeComponent,
+  saveChatMessages,
+  loadChatMessages,
+  saveChatState,
+  loadChatState,
+  removeChatMessages,
   type StoredComponentConfig,
   type StoredLayoutItem,
 } from "./utils/localStorageUtils";
@@ -157,6 +162,22 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         console.log("MasterLayout: Saved state", savedState);
       }
 
+      // Load chat state and messages
+      const savedChatState = loadChatState();
+      setChatState(savedChatState);
+
+      // Load chat messages for each component
+      if (savedState?.components) {
+        savedState.components.forEach((component) => {
+          const messages = loadChatMessages(component.id);
+          if (messages.length > 0) {
+            chatMessagesRef.current.set(component.id, messages);
+          }
+        });
+        // Update state to trigger re-render
+        setChatMessagesState(new Map(chatMessagesRef.current));
+      }
+
       // Mark initial load as complete
       isInitialLoadRef.current = false;
       setIsInitialLoadComplete(true);
@@ -172,14 +193,28 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       // Only save if we have meaningful data and avoid saving empty states
       if (components.length > 0 || layout.length > 0) {
         const serializedComponents = components.map(serializeComponent);
+
+        // Convert chat messages ref to object
+        const chatMessagesObj: Record<string, any[]> = {};
+        chatMessagesRef.current.forEach((messages, componentId) => {
+          chatMessagesObj[componentId] = messages;
+        });
+
         console.log(
           "MasterLayout: Saving layout with",
           serializedComponents,
           "components and",
           layout,
-          "layout items"
+          "layout items and",
+          chatMessagesObj,
+          "chat messages"
         );
-        saveLayoutState(serializedComponents, layout);
+        saveLayoutState(
+          serializedComponents,
+          layout,
+          chatMessagesObj,
+          chatState
+        );
       }
     }, [components, layout]);
 
@@ -334,6 +369,14 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       (id: string) => {
         setLayout((prev) => prev.filter((item) => item.i !== id));
         onComponentRemove?.(id);
+
+        // Remove chat messages from localStorage when component is deleted
+        removeChatMessages(id);
+
+        // Remove from local chat messages ref
+        chatMessagesRef.current.delete(id);
+        setChatMessagesState(new Map(chatMessagesRef.current));
+
         // Layout changes are automatically saved by the useEffect above
       },
       [onComponentRemove]
@@ -351,6 +394,9 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         };
         chatMessagesRef.current.set(componentId, [welcomeMessage]);
 
+        // Save welcome message to localStorage
+        saveChatMessages(componentId, [welcomeMessage]);
+
         // Update state to trigger re-render
         setChatMessagesState(new Map(chatMessagesRef.current));
       }
@@ -365,6 +411,9 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
             componentId: prev.componentId === componentId ? null : componentId,
           };
           console.log(`Chat state changed:`, newState);
+
+          // Save chat state to localStorage
+          saveChatState(newState);
 
           // Add welcome message when opening chat for the first time
           if (newState.isOpen && newState.componentId === componentId) {
@@ -383,7 +432,12 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         const componentId = chatState.componentId;
         if (componentId) {
           const messages = chatMessagesRef.current.get(componentId) || [];
-          chatMessagesRef.current.set(componentId, [...messages, message]);
+          const newMessages = [...messages, message];
+          chatMessagesRef.current.set(componentId, newMessages);
+
+          // Save messages to localStorage
+          saveChatMessages(componentId, newMessages);
+
           console.log(`Added message to ${componentId}:`, message.text);
         } else {
           console.warn("No component ID set for chat message");
@@ -399,6 +453,9 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           const messages = chatMessagesRef.current.get(componentId) || [];
           const newMessages = [...messages, message];
           chatMessagesRef.current.set(componentId, newMessages);
+
+          // Save messages to localStorage
+          saveChatMessages(componentId, newMessages);
 
           // Update state to trigger re-render
           setChatMessagesState(new Map(chatMessagesRef.current));
@@ -551,6 +608,7 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
           >
             <AIChatComponent
               key={`ai-chat-${chatState.componentId}`}
+              componentId={chatState.componentId}
               isMinimized={false}
               onToggleMinimize={() => toggleChat(chatState.componentId!)}
               messages={chatMessagesState.get(chatState.componentId) || []}

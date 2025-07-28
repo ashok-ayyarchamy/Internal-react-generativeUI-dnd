@@ -168,7 +168,7 @@ export const saveChatMessages = (
   if (!isLocalStorageAvailable()) return;
 
   try {
-    const state = loadDashboardState();
+    const state = loadLayoutState();
     if (!state) return;
 
     const updatedChatMessages = {
@@ -176,12 +176,13 @@ export const saveChatMessages = (
       [componentId]: messages,
     };
 
-    saveDashboardState(
+    saveLayoutState(
       state.components,
       state.layout,
       updatedChatMessages,
       state.chatState
     );
+    console.log(`Saved chat messages for ${componentId}:`, messages);
   } catch (error) {
     console.error("Failed to save chat messages:", error);
   }
@@ -189,13 +190,13 @@ export const saveChatMessages = (
 
 // Load chat messages for a specific component
 export const loadChatMessages = (componentId: string): any[] => {
-  const state = loadDashboardState();
+  const state = loadLayoutState();
   if (!state) return [];
 
   const messages = state.chatMessages[componentId] || [];
 
   // Convert string timestamps back to Date objects
-  return messages.map((message) => ({
+  return messages.map((message: any) => ({
     ...message,
     timestamp:
       typeof message.timestamp === "string"
@@ -209,17 +210,18 @@ export const removeChatMessages = (componentId: string): void => {
   if (!isLocalStorageAvailable()) return;
 
   try {
-    const state = loadDashboardState();
+    const state = loadLayoutState();
     if (!state) return;
 
     const { [componentId]: removed, ...remainingMessages } = state.chatMessages;
 
-    saveDashboardState(
+    saveLayoutState(
       state.components,
       state.layout,
       remainingMessages,
       state.chatState
     );
+    console.log(`Removed chat messages for ${componentId}`);
   } catch (error) {
     console.error("Failed to remove chat messages:", error);
   }
@@ -233,15 +235,16 @@ export const saveChatState = (chatState: {
   if (!isLocalStorageAvailable()) return;
 
   try {
-    const state = loadDashboardState();
+    const state = loadLayoutState();
     if (!state) return;
 
-    saveDashboardState(
+    saveLayoutState(
       state.components,
       state.layout,
       state.chatMessages,
       chatState
     );
+    console.log(`Saved chat state:`, chatState);
   } catch (error) {
     console.error("Failed to save chat state:", error);
   }
@@ -252,7 +255,7 @@ export const loadChatState = (): {
   isOpen: boolean;
   componentId: string | null;
 } => {
-  const state = loadDashboardState();
+  const state = loadLayoutState();
   if (!state) return { isOpen: false, componentId: null };
 
   return state.chatState;
@@ -309,6 +312,11 @@ export interface StoredDashboardState {
   timestamp: number;
   components: StoredComponentConfig[];
   layout: StoredLayoutItem[];
+  chatMessages: Record<string, any[]>;
+  chatState: {
+    isOpen: boolean;
+    componentId: string | null;
+  };
 }
 
 // LocalStorage keys for layout and components
@@ -318,7 +326,12 @@ const CURRENT_LAYOUT_VERSION = "1.0.0";
 // Save layout and component state
 export const saveLayoutState = (
   components: StoredComponentConfig[],
-  layout: StoredLayoutItem[]
+  layout: StoredLayoutItem[],
+  chatMessages: Record<string, any[]> = {},
+  chatState: { isOpen: boolean; componentId: string | null } = {
+    isOpen: false,
+    componentId: null,
+  }
 ): void => {
   if (!isLocalStorageAvailable()) {
     console.warn("localStorage is not available");
@@ -331,6 +344,8 @@ export const saveLayoutState = (
       timestamp: Date.now(),
       components,
       layout,
+      chatMessages,
+      chatState,
     };
 
     localStorage.setItem(LAYOUT_STATE_KEY, JSON.stringify(state));
@@ -357,6 +372,14 @@ export const loadLayoutState = (): StoredDashboardState | null => {
       console.warn(
         `Layout state version mismatch. Expected: ${CURRENT_LAYOUT_VERSION}, Got: ${state.version}`
       );
+    }
+
+    // Handle backward compatibility - add chat fields if they don't exist
+    if (!state.chatMessages) {
+      state.chatMessages = {};
+    }
+    if (!state.chatState) {
+      state.chatState = { isOpen: false, componentId: null };
     }
 
     return state;

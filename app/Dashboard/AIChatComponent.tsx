@@ -46,26 +46,6 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   // Use external messages if provided, otherwise use internal messages
   const messages = externalMessages || internalMessages;
 
-  // Initialize with welcome message if no messages exist
-  useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: "1",
-        text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
-        sender: "ai",
-        timestamp: new Date(),
-      };
-
-      if (externalMessages) {
-        // If using external messages, notify parent
-        onAddMessage?.(welcomeMessage);
-      } else {
-        // If using internal messages, update internal state
-        setInternalMessages([welcomeMessage]);
-      }
-    }
-  }, [messages.length, externalMessages, onAddMessage]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);

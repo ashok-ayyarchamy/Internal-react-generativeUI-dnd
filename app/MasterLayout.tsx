@@ -76,6 +76,11 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
     const chatMessagesRef = useRef<Map<string, any[]>>(new Map());
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // State to trigger re-renders when messages change
+    const [chatMessagesState, setChatMessagesState] = useState<
+      Map<string, any[]>
+    >(new Map());
+
     // Flag to prevent saving during initial load
     const isInitialLoadRef = useRef(true);
     const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
@@ -334,26 +339,76 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       [onComponentRemove]
     );
 
-    // Chat management functions
-    const toggleChat = useCallback((componentId: string) => {
-      setChatState((prev) => ({
-        isOpen: !prev.isOpen || prev.componentId !== componentId,
-        componentId: prev.componentId === componentId ? null : componentId,
-      }));
+    // Add welcome message when chat is first opened for a component
+    const addWelcomeMessage = useCallback((componentId: string) => {
+      const existingMessages = chatMessagesRef.current.get(componentId) || [];
+      if (existingMessages.length === 0) {
+        const welcomeMessage = {
+          id: "1",
+          text: "Hello! I'm your AI assistant. I can help you add components to your dashboard. Try saying 'add chart', 'show components', or 'I need a data table'.",
+          sender: "ai",
+          timestamp: new Date(),
+        };
+        chatMessagesRef.current.set(componentId, [welcomeMessage]);
+
+        // Update state to trigger re-render
+        setChatMessagesState(new Map(chatMessagesRef.current));
+      }
     }, []);
+
+    // Chat management functions
+    const toggleChat = useCallback(
+      (componentId: string) => {
+        setChatState((prev) => {
+          const newState = {
+            isOpen: !prev.isOpen || prev.componentId !== componentId,
+            componentId: prev.componentId === componentId ? null : componentId,
+          };
+          console.log(`Chat state changed:`, newState);
+
+          // Add welcome message when opening chat for the first time
+          if (newState.isOpen && newState.componentId === componentId) {
+            addWelcomeMessage(componentId);
+          }
+
+          return newState;
+        });
+      },
+      [addWelcomeMessage]
+    );
 
     const addMessageToHistory = useCallback(
       (message: any) => {
-        if (chatState.componentId) {
-          const messages =
-            chatMessagesRef.current.get(chatState.componentId) || [];
-          chatMessagesRef.current.set(chatState.componentId, [
-            ...messages,
-            message,
-          ]);
+        // Always add message to the current component's chat history
+        const componentId = chatState.componentId;
+        if (componentId) {
+          const messages = chatMessagesRef.current.get(componentId) || [];
+          chatMessagesRef.current.set(componentId, [...messages, message]);
+          console.log(`Added message to ${componentId}:`, message.text);
+        } else {
+          console.warn("No component ID set for chat message");
         }
       },
       [chatState.componentId]
+    );
+
+    // Create a function that takes componentId as parameter
+    const addMessageToComponent = useCallback(
+      (componentId: string, message: any) => {
+        if (componentId) {
+          const messages = chatMessagesRef.current.get(componentId) || [];
+          const newMessages = [...messages, message];
+          chatMessagesRef.current.set(componentId, newMessages);
+
+          // Update state to trigger re-render
+          setChatMessagesState(new Map(chatMessagesRef.current));
+
+          console.log(`Added message to ${componentId}:`, message.text);
+        } else {
+          console.warn("No component ID provided for chat message");
+        }
+      },
+      []
     );
 
     const handleAddComponentToDashboard = useCallback(
@@ -498,10 +553,10 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
               key={`ai-chat-${chatState.componentId}`}
               isMinimized={false}
               onToggleMinimize={() => toggleChat(chatState.componentId!)}
-              messages={
-                chatMessagesRef.current.get(chatState.componentId) || []
+              messages={chatMessagesState.get(chatState.componentId) || []}
+              onAddMessage={(message) =>
+                addMessageToComponent(chatState.componentId!, message)
               }
-              onAddMessage={addMessageToHistory}
               onAddComponentToDashboard={handleAddComponentToDashboard}
             />
           </div>

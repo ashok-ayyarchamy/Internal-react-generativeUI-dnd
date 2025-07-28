@@ -160,107 +160,6 @@ export const loadComponentConfig = (id: string): ComponentConfig | null => {
   return state.components.find((c) => c.id === id) || null;
 };
 
-// Save chat messages for a specific component
-export const saveChatMessages = (
-  componentId: string,
-  messages: any[]
-): void => {
-  if (!isLocalStorageAvailable()) return;
-
-  try {
-    const state = loadLayoutState();
-    if (!state) return;
-
-    const updatedChatMessages = {
-      ...state.chatMessages,
-      [componentId]: messages,
-    };
-
-    saveLayoutState(
-      state.components,
-      state.layout,
-      updatedChatMessages,
-      state.chatState
-    );
-    console.log(`Saved chat messages for ${componentId}:`, messages);
-  } catch (error) {
-    console.error("Failed to save chat messages:", error);
-  }
-};
-
-// Load chat messages for a specific component
-export const loadChatMessages = (componentId: string): any[] => {
-  const state = loadLayoutState();
-  if (!state) return [];
-
-  const messages = state.chatMessages[componentId] || [];
-
-  // Convert string timestamps back to Date objects
-  return messages.map((message: any) => ({
-    ...message,
-    timestamp:
-      typeof message.timestamp === "string"
-        ? new Date(message.timestamp)
-        : message.timestamp,
-  }));
-};
-
-// Remove chat messages when component is deleted
-export const removeChatMessages = (componentId: string): void => {
-  if (!isLocalStorageAvailable()) return;
-
-  try {
-    const state = loadLayoutState();
-    if (!state) return;
-
-    const { [componentId]: removed, ...remainingMessages } = state.chatMessages;
-
-    saveLayoutState(
-      state.components,
-      state.layout,
-      remainingMessages,
-      state.chatState
-    );
-    console.log(`Removed chat messages for ${componentId}`);
-  } catch (error) {
-    console.error("Failed to remove chat messages:", error);
-  }
-};
-
-// Save chat state (open/closed, which component)
-export const saveChatState = (chatState: {
-  isOpen: boolean;
-  componentId: string | null;
-}): void => {
-  if (!isLocalStorageAvailable()) return;
-
-  try {
-    const state = loadLayoutState();
-    if (!state) return;
-
-    saveLayoutState(
-      state.components,
-      state.layout,
-      state.chatMessages,
-      chatState
-    );
-    console.log(`Saved chat state:`, chatState);
-  } catch (error) {
-    console.error("Failed to save chat state:", error);
-  }
-};
-
-// Load chat state
-export const loadChatState = (): {
-  isOpen: boolean;
-  componentId: string | null;
-} => {
-  const state = loadLayoutState();
-  if (!state) return { isOpen: false, componentId: null };
-
-  return state.chatState;
-};
-
 // Clear all dashboard data
 export const clearDashboardData = (): void => {
   if (!isLocalStorageAvailable()) return;
@@ -327,11 +226,7 @@ const CURRENT_LAYOUT_VERSION = "1.0.0";
 export const saveLayoutState = (
   components: StoredComponentConfig[],
   layout: StoredLayoutItem[],
-  chatMessages: Record<string, any[]> = {},
-  chatState: { isOpen: boolean; componentId: string | null } = {
-    isOpen: false,
-    componentId: null,
-  }
+  chatMessages: Record<string, any[]> = {}
 ): void => {
   if (!isLocalStorageAvailable()) {
     console.warn("localStorage is not available");
@@ -345,7 +240,7 @@ export const saveLayoutState = (
       components,
       layout,
       chatMessages,
-      chatState,
+      chatState: { isOpen: false, componentId: null },
     };
 
     localStorage.setItem(LAYOUT_STATE_KEY, JSON.stringify(state));

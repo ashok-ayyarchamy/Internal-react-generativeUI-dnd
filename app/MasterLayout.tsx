@@ -58,7 +58,6 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
       components = [],
       onComponentRemove,
       onUpdateComponent,
-      onAddComponentToDashboard,
       onRestoreComponents,
     },
     ref
@@ -362,6 +361,8 @@ const MasterLayout = forwardRef<MasterLayoutRef, MasterLayoutProps>(
         // Only modify the content of the current component, preserve chat state
         if (onUpdateComponent && chatState.componentId) {
           onUpdateComponent(chatState.componentId, {
+            type: newComponent.type,
+            title: newComponent.title,
             content: newComponent.content,
           });
           // Preserve chat messages after component update

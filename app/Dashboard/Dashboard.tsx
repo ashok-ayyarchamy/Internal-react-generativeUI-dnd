@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import MasterLayout, { type MasterLayoutRef } from "~/MasterLayout";
+import React, { useState } from "react";
+import { DynoChatLayout } from "~/plugins/MasterLayoutPlugin";
 import type { DraggableComponent } from "./ComponentLibrary";
 
 // Add CSS for pulse animation
@@ -11,96 +11,33 @@ const pulseAnimation = `
 `;
 
 const Dashboard: React.FC = () => {
-  const [dashboardComponents, setDashboardComponents] = useState<
-    DraggableComponent[]
-  >([]);
-  const masterLayoutRef = useRef<MasterLayoutRef>(null);
+  const [layoutInfo, setLayoutInfo] = useState<{
+    layout: any[];
+    components: DraggableComponent[];
+  }>({ layout: [], components: [] });
 
-  const handleAddComponentToDashboard = (component: DraggableComponent) => {
-    // Create a new instance with unique ID
-    const newComponent: DraggableComponent = {
-      ...component,
-      id: `${component.type}-${Math.floor(Math.random() * 10000)}`,
-    };
-
-    // Check if component already exists
-    if (!dashboardComponents.find((c) => c.id === newComponent.id)) {
-      setDashboardComponents((prev) => [...prev, newComponent]);
-
-      // Add to master layout if ref is available
-      if (masterLayoutRef.current) {
-        // Use setTimeout to ensure state update happens first
-        setTimeout(() => {
-          masterLayoutRef.current?.addLayoutItem(newComponent);
-        }, 0);
-      }
-    }
+  const handleLayoutChange = (layoutDetails: {
+    layout: any[];
+    components: DraggableComponent[];
+  }) => {
+    setLayoutInfo(layoutDetails);
   };
 
-  const handleRemoveComponentFromDashboard = (componentId: string) => {
-    setDashboardComponents((prev) => prev.filter((c) => c.id !== componentId));
-
-    // Remove from master layout if ref is available
-    if (masterLayoutRef.current) {
-      masterLayoutRef.current.removeLayoutItem(componentId);
-    }
+  const handleAddNewComponent = (componentDetails: {
+    id: string;
+    type: string;
+    title: string;
+  }) => {
+    // Handle new component added
   };
 
-  const handleUpdateComponent = (
-    componentId: string,
-    updates: Partial<DraggableComponent>
-  ) => {
-    setDashboardComponents((prev) => {
-      const updated = prev.map((component) =>
-        component.id === componentId ? { ...component, ...updates } : component
-      );
-
-      return updated;
-    });
-  };
-
-  const handleRestoreComponents = (
-    restoredComponents: DraggableComponent[]
-  ) => {
-    console.log(
-      "Dashboard: Restoring components from saved state",
-      restoredComponents
-    );
-    setDashboardComponents(restoredComponents);
-  };
-
-  const handleAddEmptyComponent = () => {
-    // Create an empty component that will be replaced by chat selection
-    const emptyComponent: DraggableComponent = {
-      id: `empty-${Math.floor(Math.random() * 10000)}`,
-      type: "empty",
-      title: "Select Component",
-      content: (
-        <div
-          style={{
-            padding: "20px",
-            textAlign: "center",
-            color: "#666",
-            fontSize: "14px",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "#f8f9fa",
-            border: "2px dashed #dee2e6",
-          }}
-        >
-          Click the chat button to select a component
-        </div>
-      ),
-    };
-
-    setDashboardComponents((prev) => [...prev, emptyComponent]);
-
-    // Add to master layout if ref is available
-    if (masterLayoutRef.current) {
-      masterLayoutRef.current.addLayoutItem(emptyComponent);
-    }
+  const handleComponentUpdate = (updateDetails: {
+    id: string;
+    type: string;
+    title: string;
+    updates: Partial<DraggableComponent>;
+  }) => {
+    // Handle component update
   };
 
   const styles = {
@@ -150,23 +87,6 @@ const Dashboard: React.FC = () => {
       color: "#666",
       marginTop: "4px",
     },
-    floatingButton: {
-      position: "fixed" as const,
-      bottom: "20px",
-      right: "20px",
-      width: "50px",
-      height: "50px",
-      borderRadius: "25px",
-      backgroundColor: "#f0f0f0",
-      color: "#333",
-      border: "1px solid #ccc",
-      cursor: "pointer",
-      fontSize: "20px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-    },
   };
 
   return (
@@ -175,7 +95,7 @@ const Dashboard: React.FC = () => {
       <header style={styles.appBar}>
         <h1>Dashboard</h1>
         <div style={styles.componentCounter}>
-          Active Components: {dashboardComponents.length}
+          Active Components: {layoutInfo.components.length}
         </div>
       </header>
       <div style={styles.dashboardContent}>
@@ -199,25 +119,13 @@ const Dashboard: React.FC = () => {
           </ul>
         </nav>
         <main style={styles.mainContent}>
-          <MasterLayout
-            ref={masterLayoutRef}
-            components={dashboardComponents}
-            onComponentRemove={handleRemoveComponentFromDashboard}
-            onUpdateComponent={handleUpdateComponent}
-            onAddComponentToDashboard={handleAddComponentToDashboard}
-            onRestoreComponents={handleRestoreComponents}
+          <DynoChatLayout
+            onLayoutChange={handleLayoutChange}
+            onAddNewComponent={handleAddNewComponent}
+            onComponentUpdate={handleComponentUpdate}
           />
         </main>
       </div>
-
-      {/* Floating Add Button */}
-      <button
-        onClick={handleAddEmptyComponent}
-        style={styles.floatingButton}
-        title="Add new component"
-      >
-        +
-      </button>
     </div>
   );
 };

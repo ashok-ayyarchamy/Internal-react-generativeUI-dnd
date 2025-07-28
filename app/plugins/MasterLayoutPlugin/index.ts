@@ -1,5 +1,5 @@
 // Main plugin exports
-export { default as MasterLayout } from "./components/MasterLayout";
+export { default as DynoChatLayout } from "./components/MasterLayout";
 
 // Hook exports
 export { useLayoutState } from "./hooks/useLayoutState";

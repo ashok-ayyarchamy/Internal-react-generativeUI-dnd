@@ -46,24 +46,31 @@ export interface ChatMessage {
 }
 
 /**
- * Props for the MasterLayout component
+ * Props for the DynoChatLayout component
  */
-export interface MasterLayoutProps {
+export interface DynoChatLayoutProps {
   children?: ReactNode[];
-  components?: DraggableComponent[];
-  onComponentRemove?: (componentId: string) => void;
-  onUpdateComponent?: (
-    componentId: string,
-    updates: Partial<DraggableComponent>
-  ) => void;
-  onAddComponentToDashboard?: (component: DraggableComponent) => void;
-  onRestoreComponents?: (components: DraggableComponent[]) => void;
+  onLayoutChange?: (layoutDetails: {
+    layout: LayoutItem[];
+    components: DraggableComponent[];
+  }) => void;
+  onAddNewComponent?: (componentDetails: {
+    id: string;
+    type: string;
+    title: string;
+  }) => void;
+  onComponentUpdate?: (updateDetails: {
+    id: string;
+    type: string;
+    title: string;
+    updates: Partial<DraggableComponent>;
+  }) => void;
 }
 
 /**
- * Ref interface for MasterLayout
+ * Ref interface for DynoChatLayout
  */
-export interface MasterLayoutRef {
+export interface DynoChatLayoutRef {
   addLayoutItem: (component: DraggableComponent) => void;
   removeLayoutItem: (id: string) => void;
 }

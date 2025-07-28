@@ -38,7 +38,7 @@ export const useChatManagement = (
         componentId: chatState.componentId === componentId ? null : componentId,
       };
 
-      console.log(`Chat state changed:`, newState);
+
       updateChatState(newState);
 
       // Add welcome message only when opening chat for the first time and no messages exist
@@ -69,9 +69,7 @@ export const useChatManagement = (
           newComponent.title
         );
 
-        console.log(
-          `Updating component ${chatState.componentId} with new type: ${newComponent.type}`
-        );
+
 
         onUpdateComponent(chatState.componentId, {
           type: newComponent.type,
@@ -89,7 +87,7 @@ export const useChatManagement = (
       const componentId = chatState.componentId;
       if (componentId) {
         addMessageToComponent(componentId, message);
-        console.log(`Added message to ${componentId}:`, message.text);
+
       } else {
         console.warn("No component ID set for chat message");
       }

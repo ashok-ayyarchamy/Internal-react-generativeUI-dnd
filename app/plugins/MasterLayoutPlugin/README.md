@@ -1,4 +1,4 @@
-# MasterLayout Plugin
+# DynoChatLayout Plugin
 
 A comprehensive layout management system that provides drag-and-drop grid layouts, component persistence, chat integration, and responsive design.
 
@@ -16,7 +16,7 @@ A comprehensive layout management system that provides drag-and-drop grid layout
 ```
 MasterLayoutPlugin/
 ├── components/
-│   └── MasterLayout.tsx          # Main layout component
+│   └── MasterLayout.tsx          # Main layout component (DynoChatLayout)
 ├── hooks/
 │   ├── useLayoutState.ts         # Layout state management
 │   ├── useChatManagement.ts      # Chat functionality
@@ -34,23 +34,21 @@ MasterLayoutPlugin/
 ### Basic Usage
 
 ```tsx
-import { MasterLayout } from './plugins/MasterLayoutPlugin';
+import { DynoChatLayout } from './plugins/MasterLayoutPlugin';
 
 function Dashboard() {
-  const [components, setComponents] = useState([]);
-  const layoutRef = useRef();
+  const [layoutInfo, setLayoutInfo] = useState({ layout: [], components: [] });
 
   return (
-    <MasterLayout
-      ref={layoutRef}
-      components={components}
-      onComponentRemove={(id) => {
-        setComponents(prev => prev.filter(c => c.id !== id));
+    <DynoChatLayout
+      onLayoutChange={(layoutDetails) => {
+        setLayoutInfo(layoutDetails);
       }}
-      onUpdateComponent={(id, updates) => {
-        setComponents(prev => prev.map(c => 
-          c.id === id ? { ...c, ...updates } : c
-        ));
+      onAddNewComponent={(componentDetails) => {
+        // Handle new component added
+      }}
+      onComponentUpdate={(updateDetails) => {
+        // Handle component update
       }}
     />
   );
@@ -61,31 +59,25 @@ function Dashboard() {
 
 ```tsx
 import { 
-  MasterLayout, 
+  DynoChatLayout, 
   useLayoutState, 
   useChatManagement 
 } from './plugins/MasterLayoutPlugin';
 
 function CustomDashboard() {
-  const {
-    layout,
-    addLayoutItem,
-    removeLayoutItem,
-    chatState,
-    toggleChat
-  } = useLayoutState(components);
-
-  const { handleAddComponentToDashboard } = useChatManagement(
-    chatState,
-    updateChatState,
-    addMessageToComponent
-  );
+  const [layoutInfo, setLayoutInfo] = useState({ layout: [], components: [] });
 
   return (
-    <MasterLayout
-      components={components}
-      onComponentRemove={removeLayoutItem}
-      onAddComponentToDashboard={handleAddComponentToDashboard}
+    <DynoChatLayout
+      onLayoutChange={(layoutDetails) => {
+        setLayoutInfo(layoutDetails);
+      }}
+      onAddNewComponent={(componentDetails) => {
+        // Handle new component added
+      }}
+      onComponentUpdate={(updateDetails) => {
+        // Handle component update
+      }}
     />
   );
 }
@@ -93,15 +85,14 @@ function CustomDashboard() {
 
 ## API Reference
 
-### MasterLayout Component
+### DynoChatLayout Component
 
 #### Props
 
-- `components`: Array of draggable components
-- `onComponentRemove`: Callback when component is removed
-- `onUpdateComponent`: Callback when component is updated
-- `onAddComponentToDashboard`: Callback when component is added via chat
-- `onRestoreComponents`: Callback when components are restored from storage
+- `onLayoutChange`: Callback when layout changes, returns layout and components
+- `onAddNewComponent`: Callback when new component is added, returns component details
+- `onComponentUpdate`: Callback when component is updated, returns update details
+
 
 #### Ref Methods
 

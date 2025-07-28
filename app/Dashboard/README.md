@@ -7,30 +7,34 @@ This document describes the refactored dashboard architecture with proper separa
 The dashboard has been refactored to follow a clean architecture pattern where each component has a single responsibility:
 
 ### 1. Dashboard Component (`Dashboard.tsx`)
-**Responsibility**: App bar, navbar, and master layout coordination
+**Responsibility**: App bar, navbar, and layout event handling
 - Manages the overall dashboard layout
 - Handles app bar with component counter
 - Provides side navigation
-- Coordinates with MasterLayout for component management
-- Provides floating add button for new components
+- Receives layout events from DynoChatLayout
+- No direct component management
 
 **Key Features**:
-- Component state management
-- Component addition/removal coordination
-- Component update handling
+- Layout event handling
+- Component counter display
+- Navigation management
 
-### 2. MasterLayout Component (`MasterLayout.tsx`)
-**Responsibility**: Grid layout management only
+### 2. DynoChatLayout Component (`MasterLayout.tsx`)
+**Responsibility**: Complete component and layout management
 - Handles responsive grid layout using react-grid-layout
 - Manages component positioning and sizing
 - Calculates optimal positions for new components
 - Provides layout change callbacks
+- Includes floating add button for new components
+- Manages all component state internally
 
 **Key Features**:
 - Grid layout management
 - Component positioning algorithms
 - Layout state management
-- No chat or component-specific logic
+- Built-in floating add button for empty components
+- Internal component state management
+- Event callbacks for parent communication
 
 ### 3. ComponentWrapper Component (`ComponentWrapper.tsx`)
 **Responsibility**: Component wrapping and individual component features
@@ -63,7 +67,7 @@ The dashboard has been refactored to follow a clean architecture pattern where e
 ```
 Dashboard
 ├── Manages component list
-├── Coordinates with MasterLayout
+├── Coordinates with DynoChatLayout
 └── Handles component lifecycle
 
 MasterLayout
@@ -114,7 +118,7 @@ When a component is updated (e.g., through chat):
 2. **ComponentWrapper** receives update callback
 3. **ComponentWrapper** calls parent's `onUpdateComponent`
 4. **Dashboard** updates component in its state
-5. **MasterLayout** receives updated component
+5. **DynoChatLayout** receives updated component
 6. **ComponentWrapper** re-renders with new content
 7. **Chat history is preserved** throughout the process
 
@@ -144,7 +148,7 @@ When a component is updated (e.g., through chat):
 const handleAddComponentToDashboard = (component: DraggableComponent) => {
   const newComponent = { ...component, id: generateUniqueId() };
   setDashboardComponents(prev => [...prev, newComponent]);
-  masterLayoutRef.current?.addLayoutItem(newComponent);
+  // Component is added via props to DynoChatLayout
 };
 ```
 

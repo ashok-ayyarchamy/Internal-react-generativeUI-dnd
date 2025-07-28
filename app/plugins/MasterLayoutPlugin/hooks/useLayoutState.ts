@@ -63,7 +63,7 @@ export const useLayoutState = (
         onRestoreComponents?.(restoredComponents);
       }
 
-      console.log("MasterLayout: Saved state", savedState);
+
     }
 
     // Load chat messages from saved state
@@ -95,15 +95,7 @@ export const useLayoutState = (
         chatMessagesObj[componentId] = messages;
       });
 
-      console.log(
-        "MasterLayout: Saving layout with",
-        serializedComponents,
-        "components and",
-        layout,
-        "layout items and",
-        chatMessagesObj,
-        "chat messages"
-      );
+
       saveLayoutState(serializedComponents, layout, chatMessagesObj);
     }
   }, [components, layout, chatState]);
@@ -155,7 +147,7 @@ export const useLayoutState = (
         const newMessages = [...messages, message];
         chatMessagesRef.current.set(componentId, newMessages);
 
-        console.log(`Added message to ${componentId}:`, message.text);
+
       } else {
         console.warn("No component ID provided for chat message");
       }

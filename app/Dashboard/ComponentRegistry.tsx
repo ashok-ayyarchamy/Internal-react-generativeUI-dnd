@@ -15,13 +15,10 @@ import type {
   GaugeData,
   ActivityData,
 } from "./components";
-
-export interface DraggableComponent {
-  id: string;
-  type: string;
-  title: string;
-  content: React.ReactNode;
-}
+import type {
+  DraggableComponent,
+  ComponentRegistry,
+} from "~/plugins/MasterLayoutPlugin";
 
 // Sample data for components
 const chartData: ChartData = {
@@ -123,4 +120,16 @@ export const getComponentById = (
 
 export const getComponentByType = (type: string): DraggableComponent[] => {
   return componentLibrary.filter((component) => component.type === type);
+};
+
+export const getComponentTypes = (): string[] => {
+  return [...new Set(componentLibrary.map((component) => component.type))];
+};
+
+// Create the component registry
+export const componentRegistry: ComponentRegistry = {
+  components: componentLibrary,
+  getComponentById,
+  getComponentByType,
+  getComponentTypes,
 };

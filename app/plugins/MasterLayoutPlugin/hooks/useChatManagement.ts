@@ -1,6 +1,11 @@
 import { useCallback } from "react";
-import type { ChatState, ChatMessage, DraggableComponent } from "../interfaces";
-import { recreateComponentContent } from "../utils/componentUtils";
+import type {
+  ChatState,
+  ChatMessage,
+  DraggableComponent,
+  ComponentRegistry,
+} from "../interfaces";
+import { createComponentInstance } from "../utils/componentUtils";
 
 /**
  * Custom hook for managing chat functionality
@@ -13,7 +18,8 @@ export const useChatManagement = (
   onUpdateComponent?: (
     componentId: string,
     updates: Partial<DraggableComponent>
-  ) => void
+  ) => void,
+  componentRegistry?: ComponentRegistry
 ) => {
   // Add welcome message when chat is first opened for a component
   const addWelcomeMessage = useCallback(
@@ -38,7 +44,6 @@ export const useChatManagement = (
         componentId: chatState.componentId === componentId ? null : componentId,
       };
 
-
       updateChatState(newState);
 
       // Add welcome message only when opening chat for the first time and no messages exist
@@ -61,24 +66,35 @@ export const useChatManagement = (
 
   const handleAddComponentToDashboard = useCallback(
     (newComponent: DraggableComponent) => {
-      // Only modify the content of the current component, preserve chat state
-      if (onUpdateComponent && chatState.componentId) {
-        // Recreate the content based on the new component type
-        const updatedContent = recreateComponentContent(
-          newComponent.type,
-          newComponent.title
-        );
+      if (onUpdateComponent) {
+        // If there's a current component being updated (like an empty component)
+        if (chatState.componentId) {
+          // Update the existing component
+          const updatedContent = createComponentInstance(
+            newComponent.type,
+            newComponent.title,
+            componentRegistry
+          );
 
+          onUpdateComponent(chatState.componentId, {
+            type: updatedContent.type,
+            title: updatedContent.title,
+            content: updatedContent.content,
+          });
+        } else {
+          // Create a new component instance with a unique ID
+          const componentInstance = createComponentInstance(
+            newComponent.type,
+            newComponent.title,
+            componentRegistry
+          );
 
-
-        onUpdateComponent(chatState.componentId, {
-          type: newComponent.type,
-          title: newComponent.title,
-          content: updatedContent,
-        });
+          // This will be handled by the parent component to add the new component to the layout
+          onUpdateComponent(componentInstance.id, componentInstance);
+        }
       }
     },
-    [onUpdateComponent, chatState.componentId]
+    [onUpdateComponent, componentRegistry, chatState.componentId]
   );
 
   const addMessageToHistory = useCallback(
@@ -87,9 +103,6 @@ export const useChatManagement = (
       const componentId = chatState.componentId;
       if (componentId) {
         addMessageToComponent(componentId, message);
-
-      } else {
-        console.warn("No component ID set for chat message");
       }
     },
     [chatState.componentId, addMessageToComponent]

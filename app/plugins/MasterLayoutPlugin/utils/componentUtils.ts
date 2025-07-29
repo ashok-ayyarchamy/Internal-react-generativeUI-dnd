@@ -1,16 +1,18 @@
 import React from "react";
-import { componentLibrary } from "../../../Dashboard/ComponentLibrary";
-import type { DraggableComponent } from "../interfaces";
+import type { DraggableComponent, ComponentRegistry } from "../interfaces";
 
 /**
  * Recreate component content based on type
  */
 export const recreateComponentContent = (
   type: string,
-  title: string
+  title: string,
+  componentRegistry?: ComponentRegistry
 ): React.ReactNode => {
   // Find a template component of the same type
-  const templateComponent = componentLibrary.find((comp) => comp.type === type);
+  const templateComponent = componentRegistry?.components?.find(
+    (comp) => comp.type === type
+  );
 
   if (templateComponent) {
     // Return the content directly since it already has the proper props
@@ -42,9 +44,12 @@ export const recreateComponentContent = (
  * Get component by type
  */
 export const getComponentByType = (
-  type: string
+  type: string,
+  componentRegistry?: ComponentRegistry
 ): DraggableComponent | undefined => {
-  return componentLibrary.find((component) => component.type === type);
+  return componentRegistry?.components?.find(
+    (component) => component.type === type
+  );
 };
 
 /**
@@ -52,9 +57,10 @@ export const getComponentByType = (
  */
 export const createComponentInstance = (
   type: string,
-  title?: string
+  title?: string,
+  componentRegistry?: ComponentRegistry
 ): DraggableComponent => {
-  const templateComponent = getComponentByType(type);
+  const templateComponent = getComponentByType(type, componentRegistry);
 
   if (templateComponent) {
     return {
@@ -72,7 +78,8 @@ export const createComponentInstance = (
     title: title || `Unknown Component: ${type}`,
     content: recreateComponentContent(
       type,
-      title || `Unknown Component: ${type}`
+      title || `Unknown Component: ${type}`,
+      componentRegistry
     ),
   };
 };
@@ -83,11 +90,13 @@ export const createComponentInstance = (
 export const updateComponent = (
   component: DraggableComponent,
   newType: string,
-  newTitle?: string
+  newTitle?: string,
+  componentRegistry?: ComponentRegistry
 ): DraggableComponent => {
   const updatedContent = recreateComponentContent(
     newType,
-    newTitle || component.title
+    newTitle || component.title,
+    componentRegistry
   );
 
   return {

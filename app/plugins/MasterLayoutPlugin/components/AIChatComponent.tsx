@@ -1,69 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import type { DraggableComponent } from "../interfaces";
-
-// Simple component library for the plugin
-const componentLibrary: DraggableComponent[] = [
-  {
-    id: "chart-1",
-    type: "chart",
-    title: "Analytics Chart",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Analytics Chart Component
-      </div>
-    ),
-  },
-  {
-    id: "table-1",
-    type: "table",
-    title: "Data Table",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Data Table Component
-      </div>
-    ),
-  },
-  {
-    id: "card-1",
-    type: "card",
-    title: "Info Card",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Info Card Component
-      </div>
-    ),
-  },
-  {
-    id: "metric-1",
-    type: "metric",
-    title: "Key Metric",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Key Metric Component
-      </div>
-    ),
-  },
-  {
-    id: "gauge-1",
-    type: "gauge",
-    title: "Performance Gauge",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Performance Gauge Component
-      </div>
-    ),
-  },
-  {
-    id: "list-1",
-    type: "list",
-    title: "Activity List",
-    content: (
-      <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
-        Activity List Component
-      </div>
-    ),
-  },
-];
+import type { DraggableComponent, ComponentRegistry } from "../interfaces";
 
 interface Message {
   id: string;
@@ -81,6 +17,7 @@ interface AIChatComponentProps {
   onAddComponentToDashboard?: (component: DraggableComponent) => void;
   messages?: Message[];
   onAddMessage?: (message: Message) => void;
+  componentRegistry?: ComponentRegistry; // Add component registry prop
 }
 
 const AIChatComponent: React.FC<AIChatComponentProps> = ({
@@ -90,15 +27,14 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
   onAddComponentToDashboard,
   messages: externalMessages,
   onAddMessage,
+  componentRegistry,
 }) => {
   // Props validation
   if (typeof isMinimized !== "boolean") {
-    console.error("AIChatComponent: isMinimized prop must be a boolean");
     return null;
   }
 
   if (typeof onToggleMinimize !== "function") {
-    console.error("AIChatComponent: onToggleMinimize prop must be a function");
     return null;
   }
   // Internal state for messages - this component manages its own chat history
@@ -160,80 +96,190 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
 
   const processUserInput = (input: string) => {
     const lowerInput = input.toLowerCase();
+
     const addComponent = (type: string, message: string) => {
-      const component = componentLibrary.find((c) => c.type === type);
-      if (component && onAddComponentToDashboard) {
-        onAddComponentToDashboard(component);
-        return { text: message, component };
+      const templateComponent = componentRegistry?.components?.find(
+        (c) => c.type === type
+      );
+
+      if (templateComponent && onAddComponentToDashboard) {
+        // Create a new instance with a unique ID
+        const newComponent: DraggableComponent = {
+          id: `${type}-${Math.floor(Math.random() * 10000)}`,
+          type: templateComponent.type,
+          title: templateComponent.title,
+          content: templateComponent.content,
+        };
+        onAddComponentToDashboard(newComponent);
+        return { text: message, component: newComponent };
+      } else {
+        return {
+          text: `Sorry, I couldn't find a component of type "${type}". Available types: ${componentRegistry?.components
+            ?.map((c) => c.type)
+            .join(", ")}`,
+        };
       }
     };
 
+    // Get available component types from registry
+    const availableTypes =
+      componentRegistry?.components?.map((c) => c.type) || [];
+    const availableComponents = componentRegistry?.components || [];
+
+    // Check if user wants to add/show/need something
     if (
       lowerInput.includes("add") ||
       lowerInput.includes("show") ||
       lowerInput.includes("need")
     ) {
-      if (lowerInput.includes("chart") || lowerInput.includes("analytics")) {
-        return addComponent(
-          "chart",
-          "I've added the Analytics Chart to your dashboard!"
-        );
+      // Dynamically check for each available component type
+      for (const component of availableComponents) {
+        const type = component.type;
+        const title = component.title.toLowerCase();
+
+        // Check if the input contains the type or title keywords
+        if (
+          lowerInput.includes(type) ||
+          lowerInput.includes(title.replace(/\s+/g, " "))
+        ) {
+          return addComponent(
+            type,
+            `I've added the ${component.title} to your dashboard!`
+          );
+        }
       }
-      if (lowerInput.includes("table") || lowerInput.includes("data table")) {
-        return addComponent(
-          "table",
-          "I've added the Data Table to your dashboard!"
+
+      // Check for common variations and synonyms
+      if (
+        lowerInput.includes("chart") ||
+        lowerInput.includes("analytics") ||
+        lowerInput.includes("graph")
+      ) {
+        const chartComponent = availableComponents.find(
+          (c) => c.type === "chart"
         );
+        if (chartComponent) {
+          return addComponent(
+            "chart",
+            `I've added the ${chartComponent.title} to your dashboard!`
+          );
+        }
       }
+
+      if (
+        lowerInput.includes("table") ||
+        lowerInput.includes("data") ||
+        lowerInput.includes("grid")
+      ) {
+        const tableComponent = availableComponents.find(
+          (c) => c.type === "table"
+        );
+        if (tableComponent) {
+          return addComponent(
+            "table",
+            `I've added the ${tableComponent.title} to your dashboard!`
+          );
+        }
+      }
+
       if (lowerInput.includes("card") || lowerInput.includes("info")) {
-        return addComponent(
-          "card",
-          "I've added the Info Card to your dashboard!"
+        const cardComponent = availableComponents.find(
+          (c) => c.type === "card"
         );
+        if (cardComponent) {
+          return addComponent(
+            "card",
+            `I've added the ${cardComponent.title} to your dashboard!`
+          );
+        }
       }
-      if (lowerInput.includes("metric") || lowerInput.includes("key metric")) {
-        return addComponent(
-          "metric",
-          "I've added the Key Metric to your dashboard!"
+
+      if (
+        lowerInput.includes("metric") ||
+        lowerInput.includes("key") ||
+        lowerInput.includes("kpi")
+      ) {
+        const metricComponent = availableComponents.find(
+          (c) => c.type === "metric"
         );
+        if (metricComponent) {
+          return addComponent(
+            "metric",
+            `I've added the ${metricComponent.title} to your dashboard!`
+          );
+        }
       }
-      if (lowerInput.includes("gauge") || lowerInput.includes("performance")) {
-        return addComponent(
-          "gauge",
-          "I've added the Performance Gauge to your dashboard!"
+
+      if (
+        lowerInput.includes("gauge") ||
+        lowerInput.includes("performance") ||
+        lowerInput.includes("progress")
+      ) {
+        const gaugeComponent = availableComponents.find(
+          (c) => c.type === "gauge"
         );
+        if (gaugeComponent) {
+          return addComponent(
+            "gauge",
+            `I've added the ${gaugeComponent.title} to your dashboard!`
+          );
+        }
       }
-      if (lowerInput.includes("list") || lowerInput.includes("activity")) {
-        return addComponent(
-          "list",
-          "I've added the Activity List to your dashboard!"
+
+      if (
+        lowerInput.includes("list") ||
+        lowerInput.includes("activity") ||
+        lowerInput.includes("log")
+      ) {
+        const listComponent = availableComponents.find(
+          (c) => c.type === "list"
         );
+        if (listComponent) {
+          return addComponent(
+            "list",
+            `I've added the ${listComponent.title} to your dashboard!`
+          );
+        }
       }
+
+      // Show available components
       if (
         lowerInput.includes("component") ||
         lowerInput.includes("what") ||
-        lowerInput.includes("available")
+        lowerInput.includes("available") ||
+        lowerInput.includes("list") ||
+        lowerInput.includes("show")
       ) {
         setShowComponentPanel(true);
         return {
-          text: "Here are the available components you can add to your dashboard.",
-          suggestions: componentLibrary,
+          text: `Here are the available components you can add to your dashboard: ${availableTypes.join(
+            ", "
+          )}. Try saying "add [component type]" or "need [component type]".`,
+          suggestions: availableComponents,
         };
       }
+
+      // If no specific component was found, show available options
       return {
-        text: "I can help you add various components to your dashboard.",
-        suggestions: componentLibrary,
+        text: `I can help you add components to your dashboard. Available types: ${availableTypes.join(
+          ", "
+        )}. Try saying "add [component type]" or "show components".`,
+        suggestions: availableComponents,
       };
     }
 
     if (lowerInput.includes("help") || lowerInput.includes("what can you do")) {
       return {
-        text: "I can help you manage your dashboard! Try saying 'add chart' or 'show components'.",
+        text: `I can help you manage your dashboard! Available components: ${availableTypes.join(
+          ", "
+        )}. Try saying 'add [component type]' or 'show components'.`,
       };
     }
 
     return {
-      text: `I received your message: "${input}". You can ask me to add specific components or say 'show components'.`,
+      text: `I received your message: "${input}". Available components: ${availableTypes.join(
+        ", "
+      )}. Try saying 'add [component type]' or 'show components'.`,
     };
   };
 
@@ -246,10 +292,17 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
 
   const handleAddComponent = (component: DraggableComponent) => {
     if (onAddComponentToDashboard) {
-      onAddComponentToDashboard(component);
+      // Create a new instance with a unique ID
+      const newComponent: DraggableComponent = {
+        id: `${component.type}-${Math.floor(Math.random() * 10000)}`,
+        type: component.type,
+        title: component.title,
+        content: component.content,
+      };
+      onAddComponentToDashboard(newComponent);
       addMessage({
         id: Date.now().toString(),
-        text: `Added ${component.title} to dashboard`,
+        text: `Added ${newComponent.title} to dashboard`,
         sender: "ai",
         timestamp: new Date(),
       });

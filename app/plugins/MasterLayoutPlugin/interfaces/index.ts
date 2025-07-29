@@ -11,6 +11,16 @@ export interface DraggableComponent {
 }
 
 /**
+ * Component registry interface for external component libraries
+ */
+export interface ComponentRegistry {
+  components: DraggableComponent[];
+  getComponentById?: (id: string) => DraggableComponent | undefined;
+  getComponentByType?: (type: string) => DraggableComponent[];
+  getComponentTypes?: () => string[];
+}
+
+/**
  * Layout item configuration for react-grid-layout
  */
 export interface LayoutItem {
@@ -51,6 +61,7 @@ export interface ChatMessage {
 export interface DynoChatLayoutProps {
   children?: ReactNode[];
   storageKey?: string; // Optional storage key for persistence
+  componentRegistry?: ComponentRegistry; // External component registry
   onLayoutChange?: (layoutDetails: {
     layout: LayoutItem[];
     components: DraggableComponent[];

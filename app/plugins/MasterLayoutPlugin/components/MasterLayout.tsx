@@ -12,6 +12,7 @@ import type {
   DynoChatLayoutRef,
   DraggableComponent,
   LayoutItem,
+  ComponentRegistry,
 } from "../interfaces";
 import { useLayoutState } from "../hooks/useLayoutState";
 import { useChatManagement } from "../hooks/useChatManagement";
@@ -33,7 +34,13 @@ import AIChatComponent from "./AIChatComponent";
  */
 const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
   (
-    { storageKey, onLayoutChange, onAddNewComponent, onComponentUpdate },
+    {
+      storageKey,
+      onLayoutChange,
+      onAddNewComponent,
+      onComponentUpdate,
+      componentRegistry,
+    },
     ref
   ) => {
     // Internal component state
@@ -55,7 +62,8 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
       (restoredComponents) => {
         setComponents(restoredComponents);
       },
-      storageKey
+      storageKey,
+      componentRegistry
     );
 
     const { toggleChat, handleAddComponentToDashboard, addMessageToHistory } =
@@ -65,18 +73,42 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
         addMessageToComponent,
         getChatMessages,
         (componentId, updates) => {
-          setComponents((prev) =>
-            prev.map((comp) =>
-              comp.id === componentId ? { ...comp, ...updates } : comp
-            )
-          );
-          onComponentUpdate?.({
-            id: componentId,
-            type: components.find((c) => c.id === componentId)?.type || "",
-            title: components.find((c) => c.id === componentId)?.title || "",
-            updates,
-          });
-        }
+          // Check if this is a new component being added (has id, type, title, content)
+          if (updates.id && updates.type && updates.title && updates.content) {
+            // This is a new component being added
+            const newComponent: DraggableComponent = {
+              id: updates.id,
+              type: updates.type,
+              title: updates.title,
+              content: updates.content,
+            };
+
+            // Add the new component to the layout
+            addLayoutItem(newComponent);
+            setComponents((prev) => [...prev, newComponent]);
+
+            // Notify parent about new component
+            onAddNewComponent?.({
+              id: newComponent.id,
+              type: newComponent.type,
+              title: newComponent.title,
+            });
+          } else {
+            // This is an update to an existing component
+            setComponents((prev) =>
+              prev.map((comp) =>
+                comp.id === componentId ? { ...comp, ...updates } : comp
+              )
+            );
+            onComponentUpdate?.({
+              id: componentId,
+              type: components.find((c) => c.id === componentId)?.type || "",
+              title: components.find((c) => c.id === componentId)?.title || "",
+              updates,
+            });
+          }
+        },
+        componentRegistry
       );
 
     const { containerWidth, containerHeight, containerRef } =
@@ -240,6 +272,7 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
                 addMessageToComponent(chatState.componentId!, message)
               }
               onAddComponentToDashboard={handleAddComponentToDashboard}
+              componentRegistry={componentRegistry}
             />
           </div>
         )}

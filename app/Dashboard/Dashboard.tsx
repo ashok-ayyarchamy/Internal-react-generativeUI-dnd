@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DynoChatLayout } from "~/plugins/MasterLayoutPlugin";
-import type { DraggableComponent } from "./ComponentLibrary";
+import { componentRegistry } from "./ComponentRegistry";
 
 // Add CSS for pulse animation
 const pulseAnimation = `
@@ -14,12 +14,12 @@ const Dashboard: React.FC = () => {
   // Layout state - managed by DynoChatLayout internally
   const [layoutInfo, setLayoutInfo] = useState<{
     layout: any[];
-    components: DraggableComponent[];
+    components: any[];
   }>({ layout: [], components: [] });
 
   const handleLayoutChange = (layoutDetails: {
     layout: any[];
-    components: DraggableComponent[];
+    components: any[];
   }) => {
     setLayoutInfo(layoutDetails);
   };
@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
     id: string;
     type: string;
     title: string;
-    updates: Partial<DraggableComponent>;
+    updates: any;
   }) => {
     // Handle component update
   };
@@ -122,6 +122,7 @@ const Dashboard: React.FC = () => {
         <main style={styles.mainContent}>
           <DynoChatLayout
             storageKey="masterLayout_state" // Enables persistence
+            componentRegistry={componentRegistry}
             onLayoutChange={handleLayoutChange}
             onAddNewComponent={handleAddNewComponent}
             onComponentUpdate={handleComponentUpdate}

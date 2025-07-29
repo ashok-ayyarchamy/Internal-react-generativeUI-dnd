@@ -4,6 +4,7 @@ import type {
   DraggableComponent,
   ChatState,
   ChatMessage,
+  ComponentRegistry,
 } from "../interfaces";
 import { createLayoutItem } from "../utils/layout";
 import { recreateComponentContent } from "../utils/componentUtils";
@@ -19,7 +20,8 @@ import {
 export const useLayoutState = (
   components: DraggableComponent[],
   onRestoreComponents?: (components: DraggableComponent[]) => void,
-  storageKey?: string
+  storageKey?: string,
+  componentRegistry?: ComponentRegistry
 ) => {
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [chatState, setChatState] = useState<ChatState>({
@@ -57,7 +59,8 @@ export const useLayoutState = (
               title: storedConfig.title,
               content: recreateComponentContent(
                 storedConfig.type,
-                storedConfig.title
+                storedConfig.title,
+                componentRegistry
               ),
             })
           );
@@ -68,9 +71,11 @@ export const useLayoutState = (
 
         // Load chat messages from saved state
         if (savedState.chatMessages) {
-          Object.entries(savedState.chatMessages).forEach(([componentId, messages]) => {
-            chatMessagesRef.current.set(componentId, messages);
-          });
+          Object.entries(savedState.chatMessages).forEach(
+            ([componentId, messages]) => {
+              chatMessagesRef.current.set(componentId, messages);
+            }
+          );
         }
       }
     }
@@ -78,7 +83,7 @@ export const useLayoutState = (
     // Mark initial load as complete
     isInitialLoadRef.current = false;
     setIsInitialLoadComplete(true);
-  }, [onRestoreComponents, storageKey]);
+  }, [onRestoreComponents, storageKey, componentRegistry]);
 
   // Save layout and components whenever they change
   useEffect(() => {
@@ -97,7 +102,12 @@ export const useLayoutState = (
         chatMessagesObj[componentId] = messages;
       });
 
-      saveLayoutState(serializedComponents, layout, chatMessagesObj, storageKey);
+      saveLayoutState(
+        serializedComponents,
+        layout,
+        chatMessagesObj,
+        storageKey
+      );
     }
   }, [components, layout, chatState, storageKey]);
 
@@ -130,12 +140,15 @@ export const useLayoutState = (
     [layout]
   );
 
-  const removeLayoutItem = useCallback((id: string) => {
-    setLayout((prev) => prev.filter((item) => item.i !== id));
+  const removeLayoutItem = useCallback(
+    (id: string) => {
+      setLayout((prev) => prev.filter((item) => item.i !== id));
 
-    // Remove from local chat messages ref
-    chatMessagesRef.current.delete(id);
-  }, [storageKey]);
+      // Remove from local chat messages ref
+      chatMessagesRef.current.delete(id);
+    },
+    [storageKey]
+  );
 
   const updateChatState = useCallback((newChatState: ChatState) => {
     setChatState(newChatState);
@@ -147,10 +160,6 @@ export const useLayoutState = (
         const messages = chatMessagesRef.current.get(componentId) || [];
         const newMessages = [...messages, message];
         chatMessagesRef.current.set(componentId, newMessages);
-
-
-      } else {
-        console.warn("No component ID provided for chat message");
       }
     },
     []

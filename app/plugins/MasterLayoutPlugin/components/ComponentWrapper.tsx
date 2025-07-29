@@ -27,7 +27,6 @@ const ComponentWrapper: React.FC<ComponentWrapperProps> = ({
 }) => {
   // Props validation
   if (!componentId) {
-    console.error("ComponentWrapper: componentId prop is required");
     return null;
   }
 

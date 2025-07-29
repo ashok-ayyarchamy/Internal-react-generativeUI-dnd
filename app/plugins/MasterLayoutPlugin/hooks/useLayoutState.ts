@@ -18,7 +18,8 @@ import {
  */
 export const useLayoutState = (
   components: DraggableComponent[],
-  onRestoreComponents?: (components: DraggableComponent[]) => void
+  onRestoreComponents?: (components: DraggableComponent[]) => void,
+  storageKey?: string
 ) => {
   const [layout, setLayout] = useState<LayoutItem[]>([]);
   const [chatState, setChatState] = useState<ChatState>({
@@ -40,43 +41,44 @@ export const useLayoutState = (
       return;
     }
 
-    const savedState = loadLayoutState();
-    if (savedState) {
-      // Restore layout
-      setLayout(savedState.layout);
+    // Only load if storage key is provided
+    if (storageKey) {
+      const savedState = loadLayoutState(storageKey);
+      if (savedState) {
+        // Restore layout
+        setLayout(savedState.layout);
 
-      // Restore components by recreating them from the saved config
-      if (savedState.components && savedState.components.length > 0) {
-        const restoredComponents = savedState.components.map(
-          (storedConfig) => ({
-            id: storedConfig.id,
-            type: storedConfig.type,
-            title: storedConfig.title,
-            content: recreateComponentContent(
-              storedConfig.type,
-              storedConfig.title
-            ),
-          })
-        );
+        // Restore components by recreating them from the saved config
+        if (savedState.components && savedState.components.length > 0) {
+          const restoredComponents = savedState.components.map(
+            (storedConfig) => ({
+              id: storedConfig.id,
+              type: storedConfig.type,
+              title: storedConfig.title,
+              content: recreateComponentContent(
+                storedConfig.type,
+                storedConfig.title
+              ),
+            })
+          );
 
-        // Notify parent component about the restored components
-        onRestoreComponents?.(restoredComponents);
+          // Notify parent component about the restored components
+          onRestoreComponents?.(restoredComponents);
+        }
+
+        // Load chat messages from saved state
+        if (savedState.chatMessages) {
+          Object.entries(savedState.chatMessages).forEach(([componentId, messages]) => {
+            chatMessagesRef.current.set(componentId, messages);
+          });
+        }
       }
-
-
-    }
-
-    // Load chat messages from saved state
-    if (savedState?.chatMessages) {
-      Object.entries(savedState.chatMessages).forEach(([componentId, messages]) => {
-        chatMessagesRef.current.set(componentId, messages);
-      });
     }
 
     // Mark initial load as complete
     isInitialLoadRef.current = false;
     setIsInitialLoadComplete(true);
-  }, [onRestoreComponents]);
+  }, [onRestoreComponents, storageKey]);
 
   // Save layout and components whenever they change
   useEffect(() => {
@@ -85,8 +87,8 @@ export const useLayoutState = (
       return;
     }
 
-    // Only save if we have meaningful data and avoid saving empty states
-    if (components.length > 0 || layout.length > 0) {
+    // Only save if storage key is provided and we have meaningful data
+    if (storageKey && (components.length > 0 || layout.length > 0)) {
       const serializedComponents = components.map(serializeComponent);
 
       // Convert chat messages ref to object
@@ -95,10 +97,9 @@ export const useLayoutState = (
         chatMessagesObj[componentId] = messages;
       });
 
-
-      saveLayoutState(serializedComponents, layout, chatMessagesObj);
+      saveLayoutState(serializedComponents, layout, chatMessagesObj, storageKey);
     }
-  }, [components, layout, chatState]);
+  }, [components, layout, chatState, storageKey]);
 
   // Sync layout with components
   useEffect(() => {
@@ -134,7 +135,7 @@ export const useLayoutState = (
 
     // Remove from local chat messages ref
     chatMessagesRef.current.delete(id);
-  }, []);
+  }, [storageKey]);
 
   const updateChatState = useCallback((newChatState: ChatState) => {
     setChatState(newChatState);

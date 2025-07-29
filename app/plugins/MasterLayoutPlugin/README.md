@@ -41,6 +41,7 @@ function Dashboard() {
 
   return (
     <DynoChatLayout
+      storageKey="my-dashboard-layout" // Enables persistence
       onLayoutChange={(layoutDetails) => {
         setLayoutInfo(layoutDetails);
       }}
@@ -69,6 +70,7 @@ function CustomDashboard() {
 
   return (
     <DynoChatLayout
+      // No storageKey = no persistence (default behavior)
       onLayoutChange={(layoutDetails) => {
         setLayoutInfo(layoutDetails);
       }}
@@ -89,6 +91,7 @@ function CustomDashboard() {
 
 #### Props
 
+- `storageKey?`: Optional storage key for persistence. If provided, layout state will be saved/loaded from localStorage. If not provided, no persistence will occur.
 - `onLayoutChange`: Callback when layout changes, returns layout and components
 - `onAddNewComponent`: Callback when new component is added, returns component details
 - `onComponentUpdate`: Callback when component is updated, returns update details

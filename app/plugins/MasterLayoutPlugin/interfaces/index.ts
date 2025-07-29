@@ -50,6 +50,7 @@ export interface ChatMessage {
  */
 export interface DynoChatLayoutProps {
   children?: ReactNode[];
+  storageKey?: string; // Optional storage key for persistence
   onLayoutChange?: (layoutDetails: {
     layout: LayoutItem[];
     components: DraggableComponent[];

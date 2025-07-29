@@ -4,10 +4,6 @@ import type {
   ChatMessage,
 } from "../interfaces";
 
-const STORAGE_KEYS = {
-  LAYOUT_STATE: "masterLayout_state",
-} as const;
-
 /**
  * Serialize a component for storage
  */
@@ -38,8 +34,11 @@ export const deserializeComponent = (
 export const saveLayoutState = (
   components: StoredComponentConfig[],
   layout: StoredLayoutItem[],
-  chatMessages: Record<string, ChatMessage[]>
+  chatMessages: Record<string, ChatMessage[]>,
+  storageKey?: string
 ): void => {
+  if (!storageKey) return; // No storage if no key provided
+
   try {
     const state = {
       components,
@@ -47,7 +46,7 @@ export const saveLayoutState = (
       chatMessages,
       timestamp: Date.now(),
     };
-    localStorage.setItem(STORAGE_KEYS.LAYOUT_STATE, JSON.stringify(state));
+    localStorage.setItem(storageKey, JSON.stringify(state));
   } catch (error) {
     console.error("Failed to save layout state:", error);
   }
@@ -56,13 +55,17 @@ export const saveLayoutState = (
 /**
  * Load layout state from localStorage
  */
-export const loadLayoutState = (): {
+export const loadLayoutState = (
+  storageKey?: string
+): {
   components: StoredComponentConfig[];
   layout: StoredLayoutItem[];
   chatMessages: Record<string, ChatMessage[]>;
 } | null => {
+  if (!storageKey) return null; // No loading if no key provided
+
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.LAYOUT_STATE);
+    const stored = localStorage.getItem(storageKey);
     if (!stored) return null;
 
     const state = JSON.parse(stored);
@@ -86,14 +89,14 @@ export const loadLayoutState = (): {
   }
 };
 
-
-
 /**
  * Clear all plugin data from localStorage
  */
-export const clearAllPluginData = (): void => {
+export const clearAllPluginData = (storageKey?: string): void => {
+  if (!storageKey) return; // No clearing if no key provided
+
   try {
-    localStorage.removeItem(STORAGE_KEYS.LAYOUT_STATE);
+    localStorage.removeItem(storageKey);
   } catch (error) {
     console.error("Failed to clear plugin data:", error);
   }

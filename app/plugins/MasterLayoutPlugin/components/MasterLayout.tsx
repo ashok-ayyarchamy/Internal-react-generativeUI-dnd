@@ -1,4 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useCallback, useState } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+  useState,
+} from "react";
 import ResponsiveGridLayout from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 
@@ -12,8 +17,8 @@ import { useLayoutState } from "../hooks/useLayoutState";
 import { useChatManagement } from "../hooks/useChatManagement";
 import { useContainerManagement } from "../hooks/useContainerManagement";
 import { calculateChatPosition } from "../utils/layout";
-import ComponentWrapper from "../../../Dashboard/ComponentWrapper";
-import AIChatComponent from "../../../Dashboard/AIChatComponent";
+import ComponentWrapper from "./ComponentWrapper";
+import AIChatComponent from "./AIChatComponent";
 
 /**
  * DynoChatLayout Plugin Component
@@ -28,11 +33,7 @@ import AIChatComponent from "../../../Dashboard/AIChatComponent";
  */
 const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
   (
-    {
-      onLayoutChange,
-      onAddNewComponent,
-      onComponentUpdate,
-    },
+    { storageKey, onLayoutChange, onAddNewComponent, onComponentUpdate },
     ref
   ) => {
     // Internal component state
@@ -49,9 +50,13 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
       addMessageToComponent,
       getChatMessages,
       isInitialLoadComplete,
-    } = useLayoutState(components, (restoredComponents) => {
-      setComponents(restoredComponents);
-    });
+    } = useLayoutState(
+      components,
+      (restoredComponents) => {
+        setComponents(restoredComponents);
+      },
+      storageKey
+    );
 
     const { toggleChat, handleAddComponentToDashboard, addMessageToHistory } =
       useChatManagement(
@@ -60,16 +65,16 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
         addMessageToComponent,
         getChatMessages,
         (componentId, updates) => {
-          setComponents(prev => 
-            prev.map(comp => 
+          setComponents((prev) =>
+            prev.map((comp) =>
               comp.id === componentId ? { ...comp, ...updates } : comp
             )
           );
           onComponentUpdate?.({
             id: componentId,
-            type: components.find(c => c.id === componentId)?.type || '',
-            title: components.find(c => c.id === componentId)?.title || '',
-            updates
+            type: components.find((c) => c.id === componentId)?.type || "",
+            title: components.find((c) => c.id === componentId)?.title || "",
+            updates,
           });
         }
       );
@@ -108,8 +113,8 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
 
       // Add the empty component to the layout
       addLayoutItem(emptyComponent);
-      setComponents(prev => [...prev, emptyComponent]);
-      
+      setComponents((prev) => [...prev, emptyComponent]);
+
       // Notify parent about new component
       onAddNewComponent?.({
         id: emptyComponent.id,
@@ -131,8 +136,8 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
     );
 
     const onResize = useCallback(
-      (layout: LayoutItem[]) => {
-        setLayout(layout);
+      (layout: any[]) => {
+        setLayout(layout as LayoutItem[]);
       },
       [setLayout]
     );
@@ -180,19 +185,21 @@ const DynoChatLayout = forwardRef<DynoChatLayoutRef, DynoChatLayoutProps>(
                 componentTitle={component.title}
                 onRemove={(componentId) => {
                   removeLayoutItem(componentId);
-                  setComponents(prev => prev.filter(c => c.id !== componentId));
+                  setComponents((prev) =>
+                    prev.filter((c) => c.id !== componentId)
+                  );
                 }}
                 onUpdateComponent={(id, updates) => {
-                  setComponents(prev => 
-                    prev.map(comp => 
+                  setComponents((prev) =>
+                    prev.map((comp) =>
                       comp.id === id ? { ...comp, ...updates } : comp
                     )
                   );
                   onComponentUpdate?.({
                     id,
-                    type: components.find(c => c.id === id)?.type || '',
-                    title: components.find(c => c.id === id)?.title || '',
-                    updates
+                    type: components.find((c) => c.id === id)?.type || "",
+                    title: components.find((c) => c.id === id)?.title || "",
+                    updates,
                   });
                 }}
                 onToggleChat={toggleChat}

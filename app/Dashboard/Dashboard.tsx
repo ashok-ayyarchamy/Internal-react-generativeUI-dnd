@@ -11,6 +11,7 @@ const pulseAnimation = `
 `;
 
 const Dashboard: React.FC = () => {
+  // Layout state - managed by DynoChatLayout internally
   const [layoutInfo, setLayoutInfo] = useState<{
     layout: any[];
     components: DraggableComponent[];
@@ -120,6 +121,7 @@ const Dashboard: React.FC = () => {
         </nav>
         <main style={styles.mainContent}>
           <DynoChatLayout
+            storageKey="masterLayout_state" // Enables persistence
             onLayoutChange={handleLayoutChange}
             onAddNewComponent={handleAddNewComponent}
             onComponentUpdate={handleComponentUpdate}

@@ -11,14 +11,9 @@ export interface DraggableComponent {
 }
 
 /**
- * Component registry interface for external component libraries
+ * Component registry - simply an array of available components
  */
-export interface ComponentRegistry {
-  components: DraggableComponent[];
-  getComponentById?: (id: string) => DraggableComponent | undefined;
-  getComponentByType?: (type: string) => DraggableComponent[];
-  getComponentTypes?: () => string[];
-}
+export type ComponentRegistry = DraggableComponent[];
 
 /**
  * Layout item configuration for react-grid-layout

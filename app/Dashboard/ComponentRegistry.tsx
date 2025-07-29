@@ -112,24 +112,5 @@ export const componentLibrary: DraggableComponent[] = [
   },
 ];
 
-export const getComponentById = (
-  id: string
-): DraggableComponent | undefined => {
-  return componentLibrary.find((component) => component.id === id);
-};
-
-export const getComponentByType = (type: string): DraggableComponent[] => {
-  return componentLibrary.filter((component) => component.type === type);
-};
-
-export const getComponentTypes = (): string[] => {
-  return [...new Set(componentLibrary.map((component) => component.type))];
-};
-
 // Create the component registry
-export const componentRegistry: ComponentRegistry = {
-  components: componentLibrary,
-  getComponentById,
-  getComponentByType,
-  getComponentTypes,
-};
+export const componentRegistry: ComponentRegistry = componentLibrary;

@@ -10,7 +10,7 @@ export const recreateComponentContent = (
   componentRegistry?: ComponentRegistry
 ): React.ReactNode => {
   // Find a template component of the same type
-  const templateComponent = componentRegistry?.components?.find(
+  const templateComponent = componentRegistry?.find(
     (comp) => comp.type === type
   );
 
@@ -47,9 +47,7 @@ export const getComponentByType = (
   type: string,
   componentRegistry?: ComponentRegistry
 ): DraggableComponent | undefined => {
-  return componentRegistry?.components?.find(
-    (component) => component.type === type
-  );
+  return componentRegistry?.find((component) => component.type === type);
 };
 
 /**

@@ -98,9 +98,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
     const lowerInput = input.toLowerCase();
 
     const addComponent = (type: string, message: string) => {
-      const templateComponent = componentRegistry?.components?.find(
-        (c) => c.type === type
-      );
+      const templateComponent = componentRegistry?.find((c) => c.type === type);
 
       if (templateComponent && onAddComponentToDashboard) {
         // Create a new instance with a unique ID
@@ -114,7 +112,7 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
         return { text: message, component: newComponent };
       } else {
         return {
-          text: `Sorry, I couldn't find a component of type "${type}". Available types: ${componentRegistry?.components
+          text: `Sorry, I couldn't find a component of type "${type}". Available types: ${componentRegistry
             ?.map((c) => c.type)
             .join(", ")}`,
         };
@@ -122,9 +120,8 @@ const AIChatComponent: React.FC<AIChatComponentProps> = ({
     };
 
     // Get available component types from registry
-    const availableTypes =
-      componentRegistry?.components?.map((c) => c.type) || [];
-    const availableComponents = componentRegistry?.components || [];
+    const availableTypes = componentRegistry?.map((c) => c.type) || [];
+    const availableComponents = componentRegistry || [];
 
     // Check if user wants to add/show/need something
     if (

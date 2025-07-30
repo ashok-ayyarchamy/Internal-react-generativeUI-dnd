@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "fastmcp_server"
+version = "0.1.0"
+description = "FastMCP server for data retrieval from MySQL, MongoDB, and CSV"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "fastmcp_server", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastmcp = "^0.1.0"
+pymongo = "^4.5.0"
+mysql-connector-python = "^8.1.0"
+pandas = "^2.0.0"
+python-dotenv = "^1.0.0"
+pydantic = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "fastmcp_server.mcp_tools:main"
+dev = "fastmcp_server.mcp_tools:main"
+
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto" 

@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "fastapi_server"
+version = "0.1.0"
+description = "FastAPI server for component management with chat endpoint"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "fastapi_server", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = "^0.104.0"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+pydantic = "^2.0.0"
+sqlalchemy = "^2.0.0"
+python-dotenv = "^1.0.0"
+httpx = "^0.25.0"
+python-multipart = "^0.0.6"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-asyncio = "^0.21.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "fastapi_server.main:main"
+dev = "fastapi_server.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto" 

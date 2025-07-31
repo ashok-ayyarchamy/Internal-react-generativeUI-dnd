@@ -1,9 +1,15 @@
 """
-FastAPI Server for Component Management
-
-A FastAPI server that provides a chat endpoint and component management for UI components.
+FastAPI server for component management with chat endpoint.
 """
 
+from .main import app
+from .chat_agent import ChatAgent
+from .ai import DashboardCrew
+
 __version__ = "0.1.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
+
+__all__ = [
+    "app",
+    "ChatAgent",
+    "DashboardCrew",
+]

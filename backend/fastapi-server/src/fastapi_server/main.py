@@ -1,25 +1,34 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import uvicorn
 
 from .database import get_db, create_tables
-from .models import Component
+from .models import Component, Chat
 from .schemas import (
     ComponentCreate,
     ComponentUpdate,
     ComponentResponse,
     ChatRequest,
     ChatResponse,
+    ChatHistoryResponse,
+    ChatStatisticsResponse,
 )
-from .chat_agent import ChatAgent
+from .services.component_service import ComponentService
+from .services.chat_service import ChatService
 from .config import Config
 
 # Create tables
 create_tables()
 
 app = FastAPI(title="Component Management API", version="1.0.0")
-chat_agent = ChatAgent()
+
+# Create a proper ASGI application
+asgi_app = app
+
+# Initialize services
+component_service = ComponentService()
+chat_service = ChatService()
 
 
 @app.get("/")
@@ -28,19 +37,68 @@ async def root():
 
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, db: Session = Depends(get_db)):
     """
     Chat endpoint that processes natural language requests and suggests components.
+    Stores chat history in database.
     """
-    try:
-        result = await chat_agent.process_message(request.message)
-        return ChatResponse(
-            response=result["response"],
-            component_suggestion=result.get("component_suggestion"),
-            data=result.get("data"),
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Chat processing error: {str(e)}")
+    print(f"Chat request: {request}")
+    return await chat_service.process_chat_message(db, request, request.session_id)
+
+
+@app.get("/chat/history/{session_id}", response_model=ChatHistoryResponse)
+async def get_chat_history(
+    session_id: str, limit: int = Query(50, ge=1, le=100), db: Session = Depends(get_db)
+):
+    """
+    Get chat history for a specific session.
+    """
+    chats = chat_service.get_chat_history(db, session_id, limit)
+    return ChatHistoryResponse(
+        chats=chats, total_count=len(chats), session_id=session_id
+    )
+
+
+@app.get("/chat/statistics", response_model=ChatStatisticsResponse)
+async def get_chat_statistics(
+    session_id: Optional[str] = Query(None), db: Session = Depends(get_db)
+):
+    """
+    Get chat statistics.
+    """
+    stats = chat_service.get_chat_statistics(db, session_id)
+    return ChatStatisticsResponse(**stats)
+
+
+@app.get("/chat/search")
+async def search_chats(
+    search_term: str = Query(..., min_length=1),
+    session_id: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """
+    Search chats by user message or agent response.
+    """
+    chats = chat_service.search_chats(db, search_term, session_id, skip, limit)
+    return {"chats": chats, "total": len(chats)}
+
+
+@app.get("/chat/{chat_id}")
+async def get_chat(chat_id: int, db: Session = Depends(get_db)):
+    """
+    Get a specific chat by ID.
+    """
+    return chat_service.get_chat_by_id(db, chat_id)
+
+
+@app.delete("/chat/{chat_id}")
+async def delete_chat(chat_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a specific chat.
+    """
+    return chat_service.delete_chat(db, chat_id)
 
 
 @app.post("/components", response_model=ComponentResponse)
@@ -48,41 +106,19 @@ async def create_component(component: ComponentCreate, db: Session = Depends(get
     """
     Create a new component.
     """
-    try:
-        db_component = Component(
-            name=component.name,
-            component_type=component.component_type,
-            query=component.query,
-            fields=component.fields,
-            interval=component.interval,
-            data_source=component.data_source,
-            description=component.description,
-        )
-        db.add(db_component)
-        db.commit()
-        db.refresh(db_component)
-        return ComponentResponse(**db_component.to_dict())
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400, detail=f"Error creating component: {str(e)}"
-        )
+    return component_service.create_component(db, component)
 
 
 @app.get("/components", response_model=List[ComponentResponse])
 async def get_components(
-    skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    db: Session = Depends(get_db),
 ):
     """
     Get all components with pagination.
     """
-    try:
-        components = db.query(Component).offset(skip).limit(limit).all()
-        return [ComponentResponse(**component.to_dict()) for component in components]
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error retrieving components: {str(e)}"
-        )
+    return component_service.get_components(db, skip, limit)
 
 
 @app.get("/components/{component_id}", response_model=ComponentResponse)
@@ -90,17 +126,7 @@ async def get_component(component_id: int, db: Session = Depends(get_db)):
     """
     Get a specific component by ID.
     """
-    try:
-        component = db.query(Component).filter(Component.id == component_id).first()
-        if component is None:
-            raise HTTPException(status_code=404, detail="Component not found")
-        return ComponentResponse(**component.to_dict())
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error retrieving component: {str(e)}"
-        )
+    return component_service.get_component(db, component_id)
 
 
 @app.put("/components/{component_id}", response_model=ComponentResponse)
@@ -110,25 +136,7 @@ async def update_component(
     """
     Update a component.
     """
-    try:
-        db_component = db.query(Component).filter(Component.id == component_id).first()
-        if db_component is None:
-            raise HTTPException(status_code=404, detail="Component not found")
-
-        update_data = component.dict(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_component, field, value)
-
-        db.commit()
-        db.refresh(db_component)
-        return ComponentResponse(**db_component.to_dict())
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400, detail=f"Error updating component: {str(e)}"
-        )
+    return component_service.update_component(db, component_id, component)
 
 
 @app.delete("/components/{component_id}")
@@ -136,21 +144,7 @@ async def delete_component(component_id: int, db: Session = Depends(get_db)):
     """
     Delete a component.
     """
-    try:
-        db_component = db.query(Component).filter(Component.id == component_id).first()
-        if db_component is None:
-            raise HTTPException(status_code=404, detail="Component not found")
-
-        db.delete(db_component)
-        db.commit()
-        return {"message": "Component deleted successfully"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Error deleting component: {str(e)}"
-        )
+    return component_service.delete_component(db, component_id)
 
 
 @app.get("/components/type/{component_type}", response_model=List[ComponentResponse])
@@ -158,15 +152,7 @@ async def get_components_by_type(component_type: str, db: Session = Depends(get_
     """
     Get components by type (chart, table, metric, etc.).
     """
-    try:
-        components = (
-            db.query(Component).filter(Component.component_type == component_type).all()
-        )
-        return [ComponentResponse(**component.to_dict()) for component in components]
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error retrieving components: {str(e)}"
-        )
+    return component_service.get_components_by_type(db, component_type)
 
 
 @app.get("/components/source/{data_source}", response_model=List[ComponentResponse])
@@ -174,25 +160,36 @@ async def get_components_by_source(data_source: str, db: Session = Depends(get_d
     """
     Get components by data source (mysql, mongodb, csv).
     """
-    try:
-        components = (
-            db.query(Component).filter(Component.data_source == data_source).all()
-        )
-        return [ComponentResponse(**component.to_dict()) for component in components]
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error retrieving components: {str(e)}"
-        )
+    return component_service.get_components_by_source(db, data_source)
 
 
-def main():
-    uvicorn.run(
-        "fastapi_server.main:app",
-        host=Config.API_HOST,
-        port=Config.API_PORT,
-        reload=False,
-    )
+@app.get("/components/search")
+async def search_components(
+    search_term: str = Query(..., min_length=1),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """
+    Search components by name or description.
+    """
+    components = component_service.search_components(db, search_term, skip, limit)
+    return {"components": components, "total": len(components)}
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/components/recent", response_model=List[ComponentResponse])
+async def get_recent_components(
+    limit: int = Query(10, ge=1, le=50), db: Session = Depends(get_db)
+):
+    """
+    Get recently created components.
+    """
+    return component_service.get_recent_components(db, limit)
+
+
+@app.get("/components/statistics")
+async def get_component_statistics(db: Session = Depends(get_db)):
+    """
+    Get component statistics.
+    """
+    return component_service.get_component_statistics(db)

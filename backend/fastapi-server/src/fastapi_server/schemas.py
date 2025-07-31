@@ -38,9 +38,26 @@ class ComponentResponse(ComponentBase):
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
     response: str
     component_suggestion: Optional[Dict[str, Any]] = None
     data: Optional[Dict[str, Any]] = None
+    session_id: Optional[str] = None
+    chat_id: Optional[int] = None
+    processing_time: Optional[int] = None
+
+
+class ChatHistoryResponse(BaseModel):
+    chats: List[Dict[str, Any]]
+    total_count: int
+    session_id: str
+
+
+class ChatStatisticsResponse(BaseModel):
+    total_chats: int
+    average_processing_time_ms: float
+    chats_with_suggestions: int
+    suggestion_rate: float

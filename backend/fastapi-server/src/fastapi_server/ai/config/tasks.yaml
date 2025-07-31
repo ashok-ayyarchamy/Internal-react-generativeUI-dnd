@@ -1,0 +1,98 @@
+message_planning_task:
+  description: >
+    Analyze the user's message and create a strategic plan for how to respond.
+    Consider the user's intent, context, and what type of response would be most helpful.
+    
+    IMPORTANT: Use the conversation context to understand the user's history and preferences.
+    Consider what has been discussed before and how this message relates to previous interactions.
+    
+    User message: {message}
+    Conversation context: {conversation_context}
+    
+    Create a plan in JSON format with message_type, response_strategy, required_agents, priority_tasks, expected_outcome, and tone.
+    Make sure your plan considers the conversation history for more contextual responses.
+  expected_output: >
+    A JSON object containing the strategic plan for responding to the user's message, considering conversation history.
+  agent: message_planner
+
+intent_analysis_task:
+  description: >
+    ONLY RUN IF the message is a component request or complex query.
+    For simple greetings like "hi", "hello", "hey", skip this task entirely.
+    
+    Analyze the user's message to understand their intent. Consider the conversation context.
+    If they want to create dashboard components, extract requirements. If it's a greeting
+    or general question, respond conversationally.
+    
+    IMPORTANT: Use the conversation context to understand if this is a new request or a follow-up
+    to previous requests. Consider user preferences and previous component specifications.
+    
+    User message: {message}
+    Conversation context: {conversation_context}
+    
+    If it's a component request, provide analysis in JSON format with component_type, data_requirements, user_preferences, context, and complexity.
+    If it's a greeting or general question, respond naturally and conversationally.
+    Always consider the conversation history for more accurate intent analysis.
+  expected_output: >
+    Either a JSON object for component requests or a natural conversational response for greetings/questions, considering conversation history.
+  agent: intent_parser
+
+data_retrieval_task:
+  description: >
+    ONLY RUN IF the user explicitly wants to create dashboard components.
+    Skip this task for greetings, general questions, or simple conversations.
+    
+    Identify appropriate data sources and connections for dashboard components.
+    Consider any previous context from the conversation.
+    
+    IMPORTANT: Use the conversation context to remember previous data requirements,
+    user preferences, and data sources discussed. Build upon previous data suggestions.
+    
+    User message: {message}
+    Conversation context: {conversation_context}
+    
+    Provide your suggestions in JSON format with data_sources, connection_methods, data_transformations, api_endpoints, and sample_query.
+    Consider the conversation history to provide consistent and appropriate data connections.
+  expected_output: >
+    A JSON object containing data source suggestions and connection methods, considering conversation history, or skip if not a component request.
+  agent: data_connector
+
+component_generation_task:
+  description: >
+    ONLY RUN IF the user explicitly wants to create dashboard components.
+    Skip this task for greetings, general questions, or simple conversations.
+    
+    Create component specifications for dashboard components.
+    Consider any previous context and user preferences from the conversation.
+    
+    IMPORTANT: Use the conversation context to remember previous component designs,
+    user preferences, and style choices. Build upon previous specifications rather than
+    starting fresh each time.
+    
+    User message: {message}
+    Conversation context: {conversation_context}
+    
+    Provide your component specification in JSON format with component_type, layout, configuration, and implementation details.
+    Consider the conversation history to create consistent and personalized component specifications.
+  expected_output: >
+    A JSON object containing component specifications and implementation details, considering conversation history, or skip if not a component request.
+  agent: component_generator
+
+response_generation_task:
+  description: >
+    Create a natural, helpful response based on the user's intent and previous analyses.
+    Consider the conversation context to provide more personalized and contextual responses.
+    Adapt the response style and content appropriately.
+    
+    IMPORTANT: Use the conversation context to provide personalized responses that
+    build upon previous interactions. Remember user preferences, previous requests,
+    and conversation flow. Don't start fresh - continue the conversation naturally.
+    
+    User message: {message}
+    Conversation context: {conversation_context}
+    
+    Create a response that matches the user's intent and provides appropriate guidance,
+    considering the full conversation history for more contextual and helpful responses.
+  expected_output: >
+    A natural, helpful response that matches the user's intent and considers conversation history.
+  agent: response_generator 
